@@ -1,0 +1,56 @@
+# Unified Maestro Configuration for ScopeX Mobile App
+# Works for both Android and iOS platforms
+
+# Global configuration
+name: "ScopeX Mobile Tests"
+version: "1.0.0"
+
+# App configuration
+app:
+  android:
+    appId: "com.scopex.scopexmobilev2"
+    apkPath: "apps/android/app-release.apk"
+  ios:
+    appId: "com.scopex.scopexmobilev2"
+    appPath: "apps/ios/MyApp.app"
+
+# Device configuration
+device:
+  android:
+    preferred: ["Pixel_7_API_34", "Pixel_6_API_33"]
+    requirements:
+      minSdkVersion: 21
+      targetSdkVersion: 34
+  ios:
+    preferred: ["iPhone 15", "iPhone 14", "iPhone 13"]
+    requirements:
+      minVersion: "14.0"
+      targetVersion: "17.0"
+
+# Test configuration
+testing:
+  timeouts:
+    appLaunch: 15000
+    elementWait: 10000
+    permissionDialog: 5000
+  
+  capabilities:
+    android:
+      autoGrantPermissions: true
+      noReset: false
+      unicodeKeyboard: true
+    ios:
+      autoAcceptAlerts: false
+      autoDismissAlerts: false
+
+# Test flows
+flows:
+  - "flows/guest-user-flow.yaml"
+  - "flows/auth-flow.yaml"
+  - "flows/home-screen-flow.yaml"
+
+# Environment variables
+env:
+  TEST_ENVIRONMENT: "staging"
+  MAESTRO_TIMEOUT: "30000"
+  SCREENSHOT_ON_FAILURE: "true"

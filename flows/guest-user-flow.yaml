@@ -1,0 +1,83 @@
+# Guest User Flow - Works for both Android and iOS
+# Based on guest.txt and guestios.txt test files
+
+appId: ${APP_ID}
+name: "Guest User Journey"
+tags: ["guest", "onboarding", "smoke"]
+
+# Handle platform-specific permission dialogs
+---
+- runFlow:
+    when:
+      platform: android
+    file: permissions/android-permissions.yaml
+
+- runFlow:
+    when:
+      platform: ios
+    file: permissions/ios-permissions.yaml
+
+# Main guest user journey
+---
+- launchApp
+
+# Handle initial permission dialogs
+- tapOn:
+    when:
+      platform: android
+    id: "com.android.permissioncontroller:id/permission_allow_button"
+- tapOn:
+    when:
+      platform: ios
+    point: "84%,25%"
+
+- tapOn: "Allow"
+- tapOn: "Continue"
+
+# Verify onboarding screens
+- assertVisible: "Trusted by thousands"
+- assertVisible: "Built by one of us"
+- tapOn: "Continue"
+
+- assertVisible: "€10 Reward on first transaction"
+- tapOn: "Get Started"
+- tapOn: "Sign up to continue"
+
+# Verify welcome screen
+- assertVisible: "Welcome to ScopeX"
+
+# Navigate through main tabs
+- tapOn: "🏠"  # Home tab
+- tapOn: "Compare"
+- tapOn: "⚙️"  # Settings tab
+
+# Verify main navigation elements
+- assertVisible: "Help"
+- assertVisible: "Settings"
+- assertVisible: "Transfers"
+- assertVisible: "Wallet"
+- assertVisible: "Home"
+- assertVisible: "Sign up to continue"
+
+# Test tab navigation
+- tapOn: "Home"
+- tapOn: "Transfers"
+- assertVisible: "Transfers"
+- assertVisible: "Wallet Transactions"
+- assertVisible: "Sign Up"
+
+- tapOn: "Settings"
+- assertVisible: "Notifications"
+
+- tapOn: "Wallet"
+- assertVisible: "Sign Up & Verify to Claim €10"
+
+- tapOn: "Home"
+
+# Test amount input
+- tapOn: "100"
+- inputText: "500"
+- hideKeyboard
+
+# Take final screenshot
+- takeScreenshot: "guest-user-journey-complete"

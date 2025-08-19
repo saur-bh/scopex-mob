@@ -1,0 +1,37 @@
+# Android Permissions Flow
+# Handles Android-specific permission dialogs
+
+appId: ${APP_ID}
+name: "Android Permissions"
+tags: ["android", "permissions"]
+
+---
+# Handle common Android permission dialogs
+- tapOn:
+    id: "com.android.permissioncontroller:id/permission_allow_button"
+    optional: true
+- tapOn:
+    id: "com.android.permissioncontroller:id/permission_allow_foreground_only_button"
+    optional: true
+- tapOn:
+    id: "com.android.permissioncontroller:id/permission_deny_button"
+    optional: true
+
+# Handle location permissions
+- tapOn:
+    text: "Allow"
+    optional: true
+- tapOn:
+    text: "While using app"
+    optional: true
+- tapOn:
+    text: "Allow all the time"
+    optional: true
+
+# Handle notification permissions
+- tapOn:
+    text: "Allow"
+    optional: true
+- tapOn:
+    text: "Don't allow"
+    optional: true

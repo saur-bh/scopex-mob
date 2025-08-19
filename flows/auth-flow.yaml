@@ -1,0 +1,43 @@
+# Authentication Flow - Works for both Android and iOS
+# Sample authentication test flow
+
+appId: ${APP_ID}
+name: "Authentication Flow"
+tags: ["auth", "login", "signup"]
+
+---
+# App is already running from previous flow
+
+# Handle permissions
+- runFlow:
+    when:
+      platform: android
+    file: permissions/android-permissions.yaml
+
+- runFlow:
+    when:
+      platform: ios
+    file: permissions/ios-permissions.yaml
+
+# Navigate to signup
+- tapOn: "Sign up to continue"
+- assertVisible: "Welcome to ScopeX"
+
+# Test signup flow
+- tapOn: "Continue with Apple"
+- assertVisible: "Sign Up & Verify to Claim €10"
+
+# Test login flow
+- tapOn: "Sign in"
+- inputText: "test@example.com"
+- tapOn: "Password"
+- inputText: "password123"
+- tapOn: "Sign In"
+
+# Verify successful login
+- assertVisible: "Home"
+- assertVisible: "Transfers"
+- assertVisible: "Wallet"
+
+# Take screenshot
+- takeScreenshot: "auth-flow-complete"

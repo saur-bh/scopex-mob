@@ -1,0 +1,123 @@
+# Maestro Mobile Automation Framework - .gitignore
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+logs/
+temp/
+
+# Test reports and artifacts
+reports/
+screenshots/
+debug_*/
+*.xml
+*.html
+*.json
+*.txt
+
+# App binaries (keep structure but ignore actual files)
+apps/android/*.apk
+apps/ios/*.app/
+apps/ios/*.zip
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.staging
+
+# Node.js (if using any Node tools)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python (if using any Python tools)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# Java (if using any Java tools)
+*.class
+*.jar
+*.war
+*.ear
+target/
+build/
+
+# Android specific
+*.keystore
+*.jks
+local.properties
+
+# iOS specific
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+
+# Maestro specific
+.maestro/
+maestro-cloud-*
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Archive files
+*.zip
+*.tar.gz
+*.rar
+
+# Sensitive files
+secrets/
+credentials/
+*.pem
+*.key
+*.p12
+
+# CI/CD artifacts
+.ci/
+.circleci/
+.github/workflows/*.yml.bak
+
+# Documentation build files
+docs/_build/
+site/
+
+# Coverage reports
+coverage/
+*.lcov
+
+# Performance files
+*.prof
+*.out
+
+# System files
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
