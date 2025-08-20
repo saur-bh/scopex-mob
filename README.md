@@ -31,33 +31,38 @@ The framework includes an intelligent setup script that automatically detects yo
 
 ## 🎯 Test Execution
 
-### Simple Test Execution
+### Unified Test Runner
+
+The framework now uses a single unified test runner with automatic emulator management:
 
 ```bash
-# Run guest user flow on iOS
-./run-tests.sh -p ios -f guest-user-flow.yaml
+# Run Android with automatic emulator creation and cleanup
+./run-tests.sh -p android
 
-# Run on Android
-./run-tests.sh -p android -f guest-user-flow.yaml
+# Run iOS with automatic simulator creation and cleanup
+./run-tests.sh -p ios
 
-# Run on both platforms
-./run-tests.sh -p both -f guest-user-flow.yaml
+# Run on both platforms in parallel
+./run-tests.sh -p both --parallel
+
+# Run specific flow with enhanced features
+./run-tests.sh -p ios -f auth-flow.yaml --debug --record
 ```
 
-### Enhanced iOS Testing
+### Emulator Management Features
 
 ```bash
-# Run with all enhanced features (recording, HTML reports, debug)
-./run-ios-tests.sh --debug
+# Automatic emulator creation (default)
+./run-tests.sh -p android                    # Creates timestamped emulator
 
-# Run without recording
-./run-ios-tests.sh --no-record
+# Use existing emulator
+./run-tests.sh -p android --no-auto-emulator -d "Pixel_7"
 
-# Run without HTML reports
-./run-ios-tests.sh --no-html
+# Keep emulator after test (for debugging)
+./run-tests.sh -p ios --no-cleanup
 
-# Run on specific device
-./run-ios-tests.sh -d "iPhone 15 Pro" --debug
+# Run with all features
+./run-tests.sh -p android --debug --record --format HTML
 ```
 
 ### Advanced Options
@@ -97,8 +102,9 @@ scopex-mob/
 ├── reports/                       # Test reports (auto-generated)
 ├── screenshots/                   # Screenshots (auto-generated)
 ├── maestro.yaml                   # Unified configuration
-├── run-tests.sh                   # Main test runner
-├── run-ios-tests.sh              # Enhanced iOS test runner
+├── run-tests.sh                   # Unified test runner (Android + iOS)
+├── run-tests.sh.backup           # Backup of old test runners
+├── run-ios-tests.sh.backup       # Backup of old iOS runner
 ├── setup.sh                      # Intelligent environment setup
 ├── MAESTRO_REFERENCE.md          # Maestro documentation reference
 ├── ENHANCED_FEATURES_SUMMARY.md  # Framework features summary
@@ -348,37 +354,45 @@ Examples:
   ./setup.sh --install-missing --quick-test  # Full setup with test
 ```
 
-### Main Test Runner (`run-tests.sh`)
+### Unified Test Runner (`run-tests.sh`)
 
 ```bash
 Usage: ./run-tests.sh [OPTIONS]
 
-Options:
-  -p, --platform PLATFORM    Platform to test (android, ios, both)
-  -f, --flow FLOW            Flow file to run
-  --format FORMAT            Output format (JUNIT, HTML, NOOP)
-  --debug                    Enable debug mode
-  --continuous               Run in continuous mode
-  --timeout TIMEOUT          Test timeout in milliseconds
-  --include-tags TAGS        Include flows with specific tags
-  --exclude-tags TAGS        Exclude flows with specific tags
-  -h, --help                 Show help message
-```
+Platform Options:
+  -p, --platform PLATFORM    Platform to test (android|ios|both) [default: android]
+  -d, --device DEVICE        Specific device/emulator to use
+  --no-auto-emulator         Disable automatic emulator creation
+  --no-cleanup               Keep emulator after test completion
 
-### iOS Test Runner (`run-ios-tests.sh`)
-
-```bash
-Usage: ./run-ios-tests.sh [OPTIONS]
-
-Options:
+Test Options:
   -f, --flow FLOW            Flow file to run [default: guest-user-flow.yaml]
-  -d, --device DEVICE        Specific iOS device/simulator to use
-  --no-record                Disable video recording
-  --no-html                  Disable HTML report generation
-  --debug                    Enable debug mode with detailed logs
+  -t, --timeout SECONDS      Test timeout in seconds
+  --include-tags TAGS        Run flows with specific tags (comma-separated)
+  --exclude-tags TAGS        Exclude flows with specific tags (comma-separated)
+
+Output Options:
+  --format FORMAT            Output format (junit|html|noop) [default: junit]
   -v, --verbose              Enable verbose output
+  --debug                    Enable debug mode with detailed logs
+
+Execution Options:
+  --parallel                 Run tests in parallel (when using 'both' platform)
+  --continuous               Run in continuous mode (watch for changes)
+  --record                   Record test execution video
+
+Help:
   -h, --help                 Show this help message
 ```
+
+### Emulator Management Features
+
+- ✅ **Automatic Creation**: Creates timestamped emulators for each test run
+- ✅ **Automatic Installation**: Installs apps on the created emulators
+- ✅ **Automatic Cleanup**: Deletes emulators after test completion
+- ✅ **Cross-Platform**: Works with both Android emulators and iOS simulators
+- ✅ **Parallel Execution**: Run both platforms simultaneously
+- ✅ **Debug Mode**: Keep emulators for debugging with `--no-cleanup`
 
 ## 🔍 Troubleshooting
 
@@ -434,13 +448,22 @@ Options:
 
 ### Runtime Issues
 
-1. **Android Emulator Interference**:
+1. **Emulator Creation Issues**:
    ```bash
-   # iOS test runner automatically handles this
-   ./run-ios-tests.sh --debug
+   # Use existing emulator instead of auto-creation
+   ./run-tests.sh -p android --no-auto-emulator -d "Pixel_7"
+   
+   # Keep emulator for debugging
+   ./run-tests.sh -p ios --no-cleanup
    ```
 
-2. **iOS Simulator Not Starting**:
+2. **Android Emulator Interference**:
+   ```bash
+   # Unified runner automatically handles this
+   ./run-tests.sh -p ios --debug
+   ```
+
+3. **iOS Simulator Not Starting**:
    ```bash
    # Manual simulator start
    xcrun simctl boot "iPhone 16 Pro"
@@ -505,7 +528,11 @@ ls -la reports/debug_*/
 
 4. **Run Your First Test**:
    ```bash
-   ./run-tests.sh -p ios -f guest-user-flow.yaml
+   # Run with automatic emulator management
+   ./run-tests.sh -p android
+   
+   # Or run iOS with automatic simulator
+   ./run-tests.sh -p ios
    ```
 
 ## 🤝 Contributing
@@ -536,6 +563,8 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ### Recent Improvements
 
+- ✅ **Unified Test Runner**: Single script for both Android and iOS testing
+- ✅ **Automatic Emulator Management**: Creates timestamped emulators with cleanup
 - ✅ **Intelligent Setup Script**: Comprehensive environment validation
 - ✅ **Timeout Protection**: Prevents hanging on slow commands
 - ✅ **Cross-Platform Support**: Windows, macOS, and Linux compatibility
