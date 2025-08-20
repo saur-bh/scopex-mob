@@ -6,6 +6,12 @@ name: "iOS Permissions"
 tags: ["ios", "permissions"]
 
 ---
+# Start recording for permission handling
+- startRecording:
+    path: 'ios-permissions'
+    label: 'iOS Permission Dialogs'
+    optional: true
+
 # Handle iOS permission dialogs with logging
 - evalScript: ${console.log("Handling iOS permissions...");}
 
@@ -70,5 +76,6 @@ tags: ["ios", "permissions"]
     text: "Don't Allow"
     optional: true
 
-# Log permission handling completion
+# Stop recording and log permission handling completion
+- stopRecording
 - evalScript: ${console.log("iOS permissions handled successfully"); output.iosPermissionsHandled = true;}

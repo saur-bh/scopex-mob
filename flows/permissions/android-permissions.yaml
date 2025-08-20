@@ -6,6 +6,12 @@ name: "Android Permissions"
 tags: ["android", "permissions"]
 
 ---
+# Start recording for permission handling
+- startRecording:
+    path: 'android-permissions'
+    label: 'Android Permission Dialogs'
+    optional: true
+
 # Handle common Android permission dialogs with logging
 - evalScript: ${console.log("Handling Android permissions...");}
 
@@ -62,5 +68,6 @@ tags: ["android", "permissions"]
     text: "Deny"
     optional: true
 
-# Log permission handling completion
+# Stop recording and log permission handling completion
+- stopRecording
 - evalScript: ${console.log("Android permissions handled successfully"); output.androidPermissionsHandled = true;}

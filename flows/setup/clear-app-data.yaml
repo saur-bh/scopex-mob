@@ -6,9 +6,18 @@ name: "Clear App Data"
 tags: ["setup", "cleanup"]
 
 ---
+# Start recording for setup process
+- startRecording:
+    path: 'clear-app-data'
+    label: 'App Data Clearing Process'
+    optional: true
+
 # Clear app state and data
 - clearState
 - clearKeychain
 
 # Kill and relaunch app to ensure clean state
 - killApp
+
+# Stop recording
+- stopRecording

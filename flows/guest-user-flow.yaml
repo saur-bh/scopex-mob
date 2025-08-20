@@ -31,7 +31,11 @@ onFlowComplete:
       contacts: allow
       microphone: allow
 
-# Start test execution
+# Start screen recording for test evidence
+- startRecording:
+    path: 'guest-user-journey'
+    label: 'Guest User Journey Test Recording'
+    optional: true
 
 # Handle platform-specific permission dialogs
 - runFlow:
@@ -99,6 +103,7 @@ onFlowComplete:
 - assertVisible: "500"
 - evalScript: ${console.log('Amount input test completed successfully');}
 
-# Take final screenshot
+# Stop screen recording and take final screenshot
+- stopRecording
 - takeScreenshot: "guest-user-journey-complete"
 - evalScript: ${console.log('Guest user journey completed successfully!'); output.completionStatus = 'SUCCESS';}

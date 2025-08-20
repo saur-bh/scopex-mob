@@ -318,20 +318,30 @@ env:
 - stopRecording
 ```
 
-## 📊 Test Reports
+## 📊 Test Reports & Logging
 
 ### HTML Reports
-- **Location**: `reports/ios_enhanced_*/report.html`
-- **Features**: Screenshots, test results, execution timeline
-- **Format**: Beautiful, interactive HTML reports
+- **Location**: `reports/android_*/report.html` and `reports/ios_*/report.html`
+- **Features**: Screenshots, test results, execution timeline, interactive navigation
+- **Format**: Beautiful, interactive HTML reports (default output format)
+
+### Screen Recordings
+- **Location**: `flows/*.mp4` (alongside flow files)
+- **Features**: Automatic video recordings of test execution
+- **Format**: MP4 video files with descriptive names
+- **Usage**: Perfect for debugging and evidence collection
+
+### Detailed Logs
+- **Location**: `reports/logs/maestro_*_*.log`
+- **Features**: Comprehensive execution logs, error details, performance metrics
+- **Format**: Timestamped log files with full Maestro output
+- **Usage**: Debug test failures and analyze performance
 
 ### Debug Output
-- **Location**: `reports/ios_enhanced_*/debug/`
-- **Contents**: Detailed logs, screenshots, performance metrics
+- **Location**: `reports/debug_*/` (when using `--debug` flag)
+- **Contents**: Detailed logs, screenshots, performance metrics, device information
 
-### Video Recordings
-- **Location**: `reports/ios_enhanced_*/`
-- **Format**: MP4 video files of test execution
+**📖 See [RECORDING_AND_LOGGING.md](RECORDING_AND_LOGGING.md) for comprehensive documentation.**
 
 ## 🛠️ Available Commands
 

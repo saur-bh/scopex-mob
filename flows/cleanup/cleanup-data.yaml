@@ -6,5 +6,14 @@ name: "Cleanup Data"
 tags: ["cleanup", "teardown"]
 
 ---
+# Start recording for cleanup process
+- startRecording:
+    path: 'cleanup-data'
+    label: 'Post-Test Cleanup Process'
+    optional: true
+
 # Clear any remaining state
 - clearState
+
+# Stop recording
+- stopRecording

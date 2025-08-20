@@ -636,19 +636,47 @@ run_flow() {
         print_status "Video recording enabled"
     fi
     
-    # Execute the command
+    # Create logs directory for detailed logging
+    mkdir -p "reports/logs"
+    local log_file="reports/logs/maestro_${platform}_${timestamp}.log"
+    
+    # Execute the command with enhanced logging
     if [ "$VERBOSE" = true ]; then
         print_status "Executing: $maestro_cmd"
         print_status "Platform: $platform, Flow: $flow_file, Format: $OUTPUT_FORMAT"
+        print_status "Detailed logs will be saved to: $log_file"
     fi
     
-    eval "$maestro_cmd"
+    # Run Maestro with inline logging and capture output
+    print_status "Starting Maestro test execution..."
+    print_status "📱 Platform: $platform"
+    print_status "📄 Flow: $flow_file"
+    print_status "📊 Format: $OUTPUT_FORMAT"
+    print_status "📝 Logs: $log_file"
     
-    if [ $? -eq 0 ]; then
+    # Execute with verbose output and log capture
+    eval "$maestro_cmd --verbose" 2>&1 | tee "$log_file"
+    
+    local exit_code=${PIPESTATUS[0]}
+    
+    if [ $exit_code -eq 0 ]; then
         print_success "Test completed successfully for $platform"
-        print_status "Reports saved to: $output_file"
+        print_status "📊 Reports saved to: $output_file"
+        print_status "📝 Detailed logs saved to: $log_file"
+        
+        # Show summary of results
+        if [ -f "$output_file" ]; then
+            print_status "📋 Test Results Summary:"
+            if [[ "$OUTPUT_FORMAT" == "HTML" ]]; then
+                print_status "   🌐 HTML Report: $output_file"
+                print_status "   📱 Open in browser: open $output_file"
+            else
+                print_status "   📄 JUnit Report: $output_file"
+            fi
+        fi
     else
-        print_error "Test failed for $platform"
+        print_error "Test failed for $platform (Exit code: $exit_code)"
+        print_status "📝 Check detailed logs at: $log_file"
         return 1
     fi
 }
