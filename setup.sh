@@ -22,6 +22,9 @@ JAVA_MIN_VERSION="8"
 ANDROID_API_LEVEL="34"
 IOS_MIN_VERSION="14.0"
 
+# Global variables
+NON_INTERACTIVE=false
+
 # Function to print colored output
 print_header() {
     echo -e "${PURPLE}╔══════════════════════════════════════════════════════════════════════╗${NC}"
@@ -271,20 +274,34 @@ check_maestro() {
     print_step "Checking Maestro installation..."
     
     if command_exists maestro; then
-        local maestro_version=$(maestro --version 2>/dev/null | head -n 1 || echo "unknown")
-        if [[ "$maestro_version" != "unknown" ]]; then
-            print_success "Maestro is installed: $maestro_version"
-            
-            # Check if version meets minimum requirement
-            local version_number=$(echo "$maestro_version" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)
-            if [[ -n "$version_number" ]] && version_ge "$version_number" "$MAESTRO_MIN_VERSION"; then
-                print_success "Maestro version meets minimum requirement ($MAESTRO_MIN_VERSION)"
-            else
-                print_warning "Maestro version might be outdated. Minimum required: $MAESTRO_MIN_VERSION"
-            fi
+        print_success "Maestro is installed"
+        
+        # Optional: Try to get version with timeout (non-blocking)
+        local temp_file=$(mktemp)
+        (maestro --version > "$temp_file" 2>/dev/null) &
+        local pid=$!
+        
+        # Wait for up to 2 seconds
+        local count=0
+        while [[ $count -lt 20 ]] && kill -0 $pid 2>/dev/null; do
+            sleep 0.1
+            count=$((count + 1))
+        done
+        
+        # Kill if still running
+        if kill -0 $pid 2>/dev/null; then
+            kill $pid 2>/dev/null
+            print_status "Maestro version check skipped (timeout)"
         else
-            print_warning "Maestro is installed but version cannot be determined"
+            # Read version from temp file
+            if [[ -s "$temp_file" ]]; then
+                local version=$(cat "$temp_file" | tr -d '\n\r')
+                print_success "Maestro version: $version"
+            fi
         fi
+        
+        # Clean up
+        rm -f "$temp_file"
         return 0
     else
         print_error "Maestro is not installed"
@@ -329,32 +346,90 @@ check_devices() {
     
     print_step "Checking device connectivity..."
     
-    # Check Android devices
+    # Check Android devices with timeout
     if command_exists adb; then
-        local android_devices=$(adb devices | grep -v "List of devices" | grep "device$" | wc -l)
-        if [[ $android_devices -gt 0 ]]; then
-            print_success "$android_devices Android device(s) connected"
-            adb devices | grep "device$" | while read line; do
-                print_status "  Android: $line"
-            done
+        print_status "Checking Android devices..."
+        local adb_output=""
+        local adb_pid=""
+        
+        # Run adb devices in background
+        (adb devices > /tmp/adb_devices_output 2>/dev/null) &
+        adb_pid=$!
+        
+        # Wait for up to 3 seconds
+        local count=0
+        while [[ $count -lt 30 ]] && kill -0 $adb_pid 2>/dev/null; do
+            sleep 0.1
+            count=$((count + 1))
+        done
+        
+        # Kill if still running
+        if kill -0 $adb_pid 2>/dev/null; then
+            kill $adb_pid 2>/dev/null
+            print_warning "ADB device check timed out"
         else
-            print_warning "No Android devices connected"
-            print_status "Start an emulator or connect a physical device"
+            # Read output
+            if [[ -s /tmp/adb_devices_output ]]; then
+                local android_devices=$(grep -v "List of devices" /tmp/adb_devices_output | grep "device$" | wc -l)
+                if [[ $android_devices -gt 0 ]]; then
+                    print_success "$android_devices Android device(s) connected"
+                    grep "device$" /tmp/adb_devices_output | while read line; do
+                        print_status "  Android: $line"
+                    done
+                else
+                    print_warning "No Android devices connected"
+                    print_status "Start an emulator or connect a physical device"
+                fi
+            else
+                print_warning "ADB device check failed"
+            fi
         fi
+        
+        # Clean up
+        rm -f /tmp/adb_devices_output
     fi
     
-    # Check iOS devices (macOS only)
+    # Check iOS devices (macOS only) with timeout
     if [[ "$os" == "macos" ]] && command_exists xcrun; then
-        local ios_devices=$(xcrun simctl list devices | grep "Booted" | wc -l)
-        if [[ $ios_devices -gt 0 ]]; then
-            print_success "$ios_devices iOS simulator(s) running"
-            xcrun simctl list devices | grep "Booted" | while read line; do
-                print_status "  iOS: $line"
-            done
+        print_status "Checking iOS simulators..."
+        local ios_output=""
+        local ios_pid=""
+        
+        # Run xcrun simctl list devices in background
+        (xcrun simctl list devices > /tmp/ios_devices_output 2>/dev/null) &
+        ios_pid=$!
+        
+        # Wait for up to 3 seconds
+        local count=0
+        while [[ $count -lt 30 ]] && kill -0 $ios_pid 2>/dev/null; do
+            sleep 0.1
+            count=$((count + 1))
+        done
+        
+        # Kill if still running
+        if kill -0 $ios_pid 2>/dev/null; then
+            kill $ios_pid 2>/dev/null
+            print_warning "iOS simulator check timed out"
         else
-            print_warning "No iOS simulators running"
-            print_status "Start iOS Simulator from Xcode or run: open -a Simulator"
+            # Read output
+            if [[ -s /tmp/ios_devices_output ]]; then
+                local ios_devices=$(grep "Booted" /tmp/ios_devices_output | wc -l)
+                if [[ $ios_devices -gt 0 ]]; then
+                    print_success "$ios_devices iOS simulator(s) running"
+                    grep "Booted" /tmp/ios_devices_output | while read line; do
+                        print_status "  iOS: $line"
+                    done
+                else
+                    print_warning "No iOS simulators running"
+                    print_status "Start iOS Simulator from Xcode or run: open -a Simulator"
+                fi
+            else
+                print_warning "iOS simulator check failed"
+            fi
         fi
+        
+        # Clean up
+        rm -f /tmp/ios_devices_output
     fi
 }
 
@@ -390,6 +465,90 @@ create_android_emulator() {
     fi
 }
 
+# Function to setup apps directory
+setup_apps_directory() {
+    print_step "Setting up apps directory..."
+    
+    # Create apps directory structure
+    if [[ ! -d "apps" ]]; then
+        print_status "Creating apps directory structure..."
+        mkdir -p apps/android
+        mkdir -p apps/ios
+        
+        if [[ $? -eq 0 ]]; then
+            print_success "Apps directory structure created"
+        else
+            print_error "Failed to create apps directory structure"
+            return 1
+        fi
+    else
+        print_success "Apps directory already exists"
+    fi
+    
+    # Check for app files and provide guidance
+    local android_apk_missing=false
+    local ios_app_missing=false
+    
+    if [[ ! -f "apps/android/app-release.apk" ]]; then
+        android_apk_missing=true
+        print_warning "Android APK not found at: apps/android/app-release.apk"
+    else
+        print_success "Android APK found: apps/android/app-release.apk"
+    fi
+    
+    if [[ ! -d "apps/ios/MyApp.app" ]]; then
+        ios_app_missing=true
+        print_warning "iOS app bundle not found at: apps/ios/MyApp.app"
+    else
+        print_success "iOS app bundle found: apps/ios/MyApp.app"
+    fi
+    
+    # Provide guidance for missing app files
+    if [[ "$android_apk_missing" == true ]] || [[ "$ios_app_missing" == true ]]; then
+        echo ""
+        print_status "📱 App Files Setup Required:"
+        echo ""
+        
+        if [[ "$android_apk_missing" == true ]]; then
+            print_status "Android APK Setup:"
+            echo -e "  ${CYAN}Expected location:${NC} apps/android/app-release.apk"
+            echo -e "  ${CYAN}How to get:${NC} Build your Android app or download from CI/CD"
+            echo -e "  ${CYAN}Command:${NC} cp /path/to/your/app-release.apk apps/android/"
+            echo ""
+        fi
+        
+        if [[ "$ios_app_missing" == true ]]; then
+            print_status "iOS App Bundle Setup:"
+            echo -e "  ${CYAN}Expected location:${NC} apps/ios/MyApp.app"
+            echo -e "  ${CYAN}How to get:${NC} Build your iOS app or download from CI/CD"
+            echo -e "  ${CYAN}Command:${NC} cp -r /path/to/your/MyApp.app apps/ios/"
+            echo ""
+        fi
+        
+        print_status "📋 Next Steps:"
+        echo -e "  1. ${GREEN}Build your app${NC} or ${GREEN}download from CI/CD${NC}"
+        echo -e "  2. ${GREEN}Place the files${NC} in the correct locations above"
+        echo -e "  3. ${GREEN}Run setup again${NC}: ./setup.sh --check-only"
+        echo ""
+        
+        # Skip prompt if non-interactive mode
+        if [[ "$NON_INTERACTIVE" == true ]]; then
+            print_status "Non-interactive mode: Continuing setup (app files can be added later)"
+            return 0
+        fi
+        
+        # Ask user if they want to continue
+        read -p "Do you want to continue with setup (app files can be added later)? [y/N]: " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            print_status "Setup paused. Please add app files and run setup again."
+            return 1
+        fi
+    fi
+    
+    return 0
+}
+
 # Function to verify installation
 verify_installation() {
     print_step "Verifying installation..."
@@ -419,20 +578,16 @@ verify_installation() {
         issues=$((issues + 1))
     fi
     
-    if [[ -d "apps" ]]; then
-        if [[ -f "apps/android/app-release.apk" ]]; then
-            print_success "Android APK found"
+    # Setup apps directory and check app files
+    if setup_apps_directory; then
+        # Apps directory setup successful
+        if [[ -f "apps/android/app-release.apk" ]] && [[ -d "apps/ios/MyApp.app" ]]; then
+            print_success "All app files are present and ready for testing"
         else
-            print_warning "Android APK not found at apps/android/app-release.apk"
-        fi
-        
-        if [[ -d "apps/ios/MyApp.app" ]]; then
-            print_success "iOS app bundle found"
-        else
-            print_warning "iOS app bundle not found at apps/ios/MyApp.app"
+            print_warning "Some app files are missing but setup can continue"
         fi
     else
-        print_error "apps directory not found"
+        print_error "Apps directory setup failed"
         issues=$((issues + 1))
     fi
     
@@ -519,6 +674,7 @@ show_usage() {
     echo "  --install-missing   Install missing components automatically"
     echo "  --create-emulator   Create Android emulator after setup"
     echo "  --quick-test        Run a quick test after setup"
+    echo "  --non-interactive   Run in non-interactive mode (skip prompts)"
     echo "  --verbose           Enable verbose output"
     echo "  --help              Show this help message"
     echo ""
@@ -526,6 +682,7 @@ show_usage() {
     echo "  $0                              # Check requirements and show status"
     echo "  $0 --install-missing            # Install missing components"
     echo "  $0 --install-missing --quick-test  # Full setup with test"
+    echo "  $0 --non-interactive            # Run without user prompts"
 }
 
 # Main function
@@ -535,6 +692,7 @@ main() {
     local create_emulator=false
     local quick_test=false
     local verbose=false
+    local non_interactive=false
     
     # Parse command line arguments
     while [[ $# -gt 0 ]]; do
@@ -553,6 +711,11 @@ main() {
                 ;;
             --quick-test)
                 quick_test=true
+                shift
+                ;;
+            --non-interactive)
+                non_interactive=true
+                NON_INTERACTIVE=true
                 shift
                 ;;
             --verbose)
