@@ -7,8 +7,7 @@ tags: ["android", "permissions"]
 
 ---
 # Handle common Android permission dialogs with logging
-- runScript: |
-    console.log("Handling Android permissions...");
+- evalScript: ${console.log("Handling Android permissions...");}
 
 - tapOn:
     id: "com.android.permissioncontroller:id/permission_allow_button"
@@ -21,7 +20,6 @@ tags: ["android", "permissions"]
     optional: true
 
 # Handle location permissions
----
 - tapOn:
     text: "Allow"
     optional: true
@@ -33,7 +31,6 @@ tags: ["android", "permissions"]
     optional: true
 
 # Handle notification permissions
----
 - tapOn:
     text: "Allow"
     optional: true
@@ -42,7 +39,6 @@ tags: ["android", "permissions"]
     optional: true
 
 # Handle camera permissions
----
 - tapOn:
     text: "Allow"
     optional: true
@@ -51,7 +47,6 @@ tags: ["android", "permissions"]
     optional: true
 
 # Handle contacts permissions
----
 - tapOn:
     text: "Allow"
     optional: true
@@ -60,7 +55,6 @@ tags: ["android", "permissions"]
     optional: true
 
 # Handle microphone permissions
----
 - tapOn:
     text: "Allow"
     optional: true
@@ -69,7 +63,4 @@ tags: ["android", "permissions"]
     optional: true
 
 # Log permission handling completion
----
-- runScript: |
-    console.log("Android permissions handled successfully");
-    output.androidPermissionsHandled = true;
+- evalScript: ${console.log("Android permissions handled successfully"); output.androidPermissionsHandled = true;}

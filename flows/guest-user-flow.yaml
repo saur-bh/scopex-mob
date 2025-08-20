@@ -31,12 +31,9 @@ onFlowComplete:
       contacts: allow
       microphone: allow
 
-# Start recording the test execution
----
-- startRecording
+# Start test execution
 
 # Handle platform-specific permission dialogs
----
 - runFlow:
     when:
       platform: android
@@ -48,7 +45,6 @@ onFlowComplete:
     file: permissions/ios-permissions.yaml
 
 # Navigate through onboarding with dynamic logging
----
 - evalScript: ${console.log('Starting onboarding flow on', maestro.platform);}
 - tapOn: "Continue"
 - assertVisible: "Trusted by thousands"
@@ -61,18 +57,15 @@ onFlowComplete:
 - tapOn: "Sign up to continue"
 
 # Verify welcome screen
----
 - assertVisible: "Welcome to ScopeX"
 - evalScript: ${console.log('Successfully reached welcome screen');}
 
 # Navigate through main tabs with enhanced assertions
----
 - tapOn: "🏠"  # Home tab
 - tapOn: "Compare"
 - tapOn: "⚙️"  # Settings tab
 
 # Verify main navigation elements
----
 - assertVisible: "Help"
 - assertVisible: "Settings"
 - assertVisible: "Transfers"
@@ -81,7 +74,6 @@ onFlowComplete:
 - assertVisible: "Sign up to continue"
 
 # Test tab navigation with platform-specific logging
----
 - evalScript: ${console.log('Testing tab navigation on', maestro.platform);}
 - tapOn: "Home"
 - tapOn: "Transfers"
@@ -98,19 +90,15 @@ onFlowComplete:
 - tapOn: "Home"
 
 # Test amount input functionality
----
 - evalScript: ${console.log('Testing amount input functionality');}
 - tapOn: "100"
 - inputText: "500"
 - hideKeyboard
 
 # Verify amount was entered correctly
----
 - assertVisible: "500"
 - evalScript: ${console.log('Amount input test completed successfully');}
 
-# Stop recording and take final screenshot
----
-- stopRecording
+# Take final screenshot
 - takeScreenshot: "guest-user-journey-complete"
 - evalScript: ${console.log('Guest user journey completed successfully!'); output.completionStatus = 'SUCCESS';}

@@ -11,5 +11,4 @@ tags: ["setup", "cleanup"]
 - clearKeychain
 
 # Kill and relaunch app to ensure clean state
----
 - killApp

@@ -7,8 +7,7 @@ tags: ["ios", "permissions"]
 
 ---
 # Handle iOS permission dialogs with logging
-- runScript: |
-    console.log("Handling iOS permissions...");
+- evalScript: ${console.log("Handling iOS permissions...");}
 
 - tapOn:
     point: "84%,25%"
@@ -21,7 +20,6 @@ tags: ["ios", "permissions"]
     optional: true
 
 # Handle notification permissions
----
 - tapOn:
     text: "Allow"
     optional: true
@@ -30,7 +28,6 @@ tags: ["ios", "permissions"]
     optional: true
 
 # Handle location permissions
----
 - tapOn:
     text: "Allow While Using App"
     optional: true
@@ -42,7 +39,6 @@ tags: ["ios", "permissions"]
     optional: true
 
 # Handle camera permissions
----
 - tapOn:
     text: "OK"
     optional: true
@@ -51,7 +47,6 @@ tags: ["ios", "permissions"]
     optional: true
 
 # Handle contacts permissions
----
 - tapOn:
     text: "Allow"
     optional: true
@@ -60,7 +55,6 @@ tags: ["ios", "permissions"]
     optional: true
 
 # Handle microphone permissions
----
 - tapOn:
     text: "Allow"
     optional: true
@@ -69,7 +63,6 @@ tags: ["ios", "permissions"]
     optional: true
 
 # Handle photos permissions
----
 - tapOn:
     text: "Allow"
     optional: true
@@ -78,7 +71,4 @@ tags: ["ios", "permissions"]
     optional: true
 
 # Log permission handling completion
----
-- runScript: |
-    console.log("iOS permissions handled successfully");
-    output.iosPermissionsHandled = true;
+- evalScript: ${console.log("iOS permissions handled successfully"); output.iosPermissionsHandled = true;}

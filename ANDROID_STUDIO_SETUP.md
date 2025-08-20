@@ -13,6 +13,17 @@
    - ✅ Android SDK Platform-Tools
 5. **Click 'Apply' and install**
 
+### Apple Silicon Mac Setup (Important!)
+
+If you're on an Apple Silicon Mac (M1/M2/M3), you also need:
+
+1. **Go to 'SDK Platforms' tab**
+2. **Check 'Android 14.0 (API 34)'**
+3. **Make sure 'ARM 64 v8a' is selected for your architecture**
+4. **Click 'Apply' and install**
+
+This ensures you get the ARM64 system image needed for Apple Silicon.
+
 ### Option 2: Install via Homebrew
 
 ```bash
@@ -80,6 +91,28 @@ emulator -list-avds
 ### Emulator Issues
 - Make sure Android Emulator is installed in SDK Tools
 - Check if emulator binary exists: `ls $ANDROID_HOME/emulator/emulator`
+
+### Apple Silicon Mac Issues
+
+**Error: "CPU Architecture 'x86_64' is not supported by the QEMU2 emulator on aarch64 host"**
+
+This means you need the ARM64 system image:
+
+1. **Open Android Studio**
+2. **Go to Tools > SDK Manager**
+3. **Click on 'SDK Platforms' tab**
+4. **Check 'Android 14.0 (API 34)'**
+5. **Make sure 'ARM 64 v8a' is selected**
+6. **Click 'Apply' and install**
+
+**Alternative: Use existing emulators**
+```bash
+# List existing emulators
+emulator -list-avds
+
+# Use existing emulator
+./run-tests.sh -p android --no-auto-emulator -d "YourEmulatorName"
+```
 
 ### Permission Issues
 - Make sure Android SDK directory is readable

@@ -239,9 +239,24 @@ create_android_emulator() {
     
     # Create unique emulator name with timestamp
     EMULATOR_NAME="ScopeX_Test_${TIMESTAMP}"
-    local system_image="system-images;android-34;google_apis;x86_64"
     
-    print_status "Creating emulator: $EMULATOR_NAME"
+    # Detect Mac architecture and choose appropriate system image
+    local mac_arch=$(uname -m)
+    local system_image=""
+    local device_type=""
+    
+    if [[ "$mac_arch" == "arm64" ]]; then
+        print_status "Detected Apple Silicon Mac (arm64)"
+        system_image="system-images;android-34;google_apis;arm64-v8a"
+        device_type="Pixel_6"
+    else
+        print_status "Detected Intel Mac (x86_64)"
+        system_image="system-images;android-34;google_apis;x86_64"
+        device_type="Nexus_5X"
+    fi
+    
+    print_status "Using system image: $system_image"
+    print_status "Using device type: $device_type"
     
     # Find sdkmanager and avdmanager
     local sdkmanager_path=""
@@ -271,10 +286,31 @@ create_android_emulator() {
         return 1
     fi
     
-    # Install system image if not available
-    if [[ ! -d "$ANDROID_HOME/system-images/android-34/google_apis/x86_64" ]]; then
+    # Check if system image exists, if not install it
+    local system_image_path=""
+    if [[ "$mac_arch" == "arm64" ]]; then
+        system_image_path="$ANDROID_HOME/system-images/android-34/google_apis/arm64-v8a"
+    else
+        system_image_path="$ANDROID_HOME/system-images/android-34/google_apis/x86_64"
+    fi
+    
+    if [[ ! -d "$system_image_path" ]]; then
         print_status "Installing system image: $system_image"
+        print_status "This may take a few minutes..."
         yes | "$sdkmanager_path" "$system_image"
+        
+        if [[ $? -ne 0 ]]; then
+            print_error "Failed to install system image: $system_image"
+            print_status "Please install it manually in Android Studio:"
+            echo "  1. Open Android Studio"
+            echo "  2. Go to Tools > SDK Manager"
+            echo "  3. Click on 'SDK Platforms' tab"
+            echo "  4. Check 'Android 14.0 (API 34)'"
+            echo "  5. Click 'Apply' and install"
+            return 1
+        fi
+    else
+        print_success "System image already installed: $system_image"
     fi
     
     # Create AVD
@@ -282,7 +318,7 @@ create_android_emulator() {
     echo "no" | "$avdmanager_path" create avd \
         -n "$EMULATOR_NAME" \
         -k "$system_image" \
-        -d "Nexus 5X"
+        -d "$device_type"
     
     if [[ $? -eq 0 ]]; then
         print_success "Android emulator created: $EMULATOR_NAME"
@@ -476,8 +512,23 @@ install_app() {
         "android")
             if [ -f "apps/android/app-release.apk" ]; then
                 print_status "Installing Android APK..."
+                
+                # First, try to uninstall existing app to avoid signature conflicts
+                print_status "Checking for existing app..."
+                if adb shell pm list packages | grep -q "com.scopex.scopexmobilev2"; then
+                    print_status "Uninstalling existing app..."
+                    adb uninstall com.scopex.scopexmobilev2 2>/dev/null || true
+                fi
+                
+                # Install the app
                 adb install -r apps/android/app-release.apk
-                print_success "Android app installed"
+                
+                if [ $? -eq 0 ]; then
+                    print_success "Android app installed"
+                else
+                    print_warning "App installation failed, but continuing with test"
+                    print_status "The app might already be installed or there's a signature mismatch"
+                fi
             else
                 print_error "Android APK not found at apps/android/app-release.apk"
                 return 1
@@ -540,9 +591,9 @@ run_flow() {
     # Add output option
     maestro_cmd="$maestro_cmd --output $output_file"
     
-    # Add device option if specified
+    # Note: Maestro doesn't support --device option, it uses the currently connected device
     if [ -n "$DEVICE" ]; then
-        maestro_cmd="$maestro_cmd --device \"$DEVICE\""
+        print_status "Device specified: $DEVICE (Maestro will use the currently connected device)"
     fi
     
     # Add timeout option if specified
