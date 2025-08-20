@@ -24,7 +24,7 @@ DEBUG=false
 CONTINUOUS=false
 RECORD=false
 DEVICE=""
-OUTPUT_FORMAT="JUNIT"
+OUTPUT_FORMAT="HTML"
 TIMEOUT=""
 TAGS=""
 INCLUDE_TAGS=""
@@ -83,7 +83,7 @@ show_usage() {
     echo "  --exclude-tags TAGS        Exclude flows with specific tags (comma-separated)"
     echo ""
     echo "Output Options:"
-    echo "  --format FORMAT            Output format (junit|html|noop) [default: junit]"
+    echo "  --format FORMAT            Output format (junit|html|noop) [default: html]"
     echo "  -v, --verbose              Enable verbose output"
     echo "  --debug                    Enable debug mode with detailed logs"
     echo ""
@@ -96,18 +96,99 @@ show_usage() {
     echo "  -h, --help                 Show this help message"
     echo ""
     echo "Examples:"
-    echo "  $0                                    # Run Android with auto emulator"
-    echo "  $0 -p ios                             # Run iOS with auto simulator"
-    echo "  $0 -p both --parallel                 # Run both platforms in parallel"
-    echo "  $0 -f auth-flow.yaml -p android       # Run specific flow on Android"
-    echo "  $0 --no-auto-emulator -d \"Pixel_7\"   # Use existing emulator"
-    echo "  $0 --no-cleanup                       # Keep emulator after test"
+echo "  $0                                    # Run Android with auto emulator (HTML output)"
+echo "  $0 -p ios                             # Run iOS with auto simulator (HTML output)"
+echo "  $0 -p both --parallel                 # Run both platforms in parallel"
+echo "  $0 -f auth-flow.yaml -p android       # Run specific flow on Android"
+echo "  $0 --no-auto-emulator -d \"Pixel_7\"   # Use existing emulator"
+echo "  $0 --no-cleanup                       # Keep emulator after test"
+echo "  $0 --format junit                     # Use JUnit output instead of HTML"
     echo ""
     echo "Emulator Management:"
     echo "  ✅ Automatic emulator creation with timestamp"
     echo "  ✅ Automatic app installation"
     echo "  ✅ Automatic cleanup after tests"
     echo "  ✅ Cross-platform compatibility"
+}
+
+# Function to check Android Studio setup
+check_android_studio_setup() {
+    print_step "Checking Android Studio setup..."
+    
+    # Check if ANDROID_HOME is set
+    if [[ -z "$ANDROID_HOME" ]]; then
+        print_error "ANDROID_HOME is not set"
+        print_status "Please set it in your shell profile (~/.zshrc or ~/.bash_profile):"
+        echo "  export ANDROID_HOME=\"/Users/saurabhverma/Library/Android/sdk\""
+        echo "  export PATH=\"\$ANDROID_HOME/platform-tools:\$PATH\""
+        exit 1
+    fi
+    
+    # Check if Android SDK exists
+    if [[ ! -d "$ANDROID_HOME" ]]; then
+        print_error "Android SDK not found at: $ANDROID_HOME"
+        print_status "Please install Android Studio and SDK from:"
+        echo "  https://developer.android.com/studio"
+        exit 1
+    fi
+    
+    print_success "Android SDK found at: $ANDROID_HOME"
+    
+    # Check for command line tools
+    local cmdline_tools_found=false
+    
+    # Check common locations for command line tools
+    local possible_paths=(
+        "$ANDROID_HOME/cmdline-tools/latest/bin"
+        "$ANDROID_HOME/cmdline-tools/9.0/bin"
+        "$ANDROID_HOME/cmdline-tools/8.0/bin"
+        "$ANDROID_HOME/cmdline-tools/7.0/bin"
+        "$ANDROID_HOME/tools/bin"
+    )
+    
+    for path in "${possible_paths[@]}"; do
+        if [[ -d "$path" ]]; then
+            if [[ -f "$path/sdkmanager" ]] && [[ -f "$path/avdmanager" ]]; then
+                print_success "Command line tools found at: $path"
+                export PATH="$path:$PATH"
+                cmdline_tools_found=true
+                break
+            fi
+        fi
+    done
+    
+    if [[ "$cmdline_tools_found" == false ]]; then
+        print_warning "Android command line tools not found"
+        print_status "To install command line tools:"
+        echo ""
+        echo "  1. Open Android Studio"
+        echo "  2. Go to Tools > SDK Manager"
+        echo "  3. Click on 'SDK Tools' tab"
+        echo "  4. Check 'Android SDK Command-line Tools (latest)'"
+        echo "  5. Click 'Apply' and install"
+        echo ""
+        print_status "Or install via command line:"
+        echo "  brew install --cask android-commandlinetools"
+        echo ""
+        print_status "After installation, restart your terminal and try again."
+        echo ""
+        print_status "For now, you can use existing emulators:"
+        echo "  ./run-tests.sh -p android --no-auto-emulator"
+        exit 1
+    fi
+    
+    # Check if emulator exists
+    if [[ ! -f "$ANDROID_HOME/emulator/emulator" ]]; then
+        print_warning "Android emulator not found"
+        print_status "To install emulator:"
+        echo "  1. Open Android Studio"
+        echo "  2. Go to Tools > SDK Manager"
+        echo "  3. Click on 'SDK Tools' tab"
+        echo "  4. Check 'Android Emulator'"
+        echo "  5. Click 'Apply' and install"
+    else
+        print_success "Android emulator found"
+    fi
 }
 
 # Function to check if Maestro is installed
@@ -162,15 +243,43 @@ create_android_emulator() {
     
     print_status "Creating emulator: $EMULATOR_NAME"
     
+    # Find sdkmanager and avdmanager
+    local sdkmanager_path=""
+    local avdmanager_path=""
+    
+    # Check common locations
+    local possible_paths=(
+        "$ANDROID_HOME/cmdline-tools/latest/bin"
+        "$ANDROID_HOME/cmdline-tools/9.0/bin"
+        "$ANDROID_HOME/cmdline-tools/8.0/bin"
+        "$ANDROID_HOME/cmdline-tools/7.0/bin"
+        "$ANDROID_HOME/tools/bin"
+    )
+    
+    for path in "${possible_paths[@]}"; do
+        if [[ -f "$path/sdkmanager" ]]; then
+            sdkmanager_path="$path/sdkmanager"
+        fi
+        if [[ -f "$path/avdmanager" ]]; then
+            avdmanager_path="$path/avdmanager"
+        fi
+    done
+    
+    if [[ -z "$sdkmanager_path" ]] || [[ -z "$avdmanager_path" ]]; then
+        print_error "sdkmanager or avdmanager not found"
+        print_status "Please install Android command line tools first"
+        return 1
+    fi
+    
     # Install system image if not available
     if [[ ! -d "$ANDROID_HOME/system-images/android-34/google_apis/x86_64" ]]; then
         print_status "Installing system image: $system_image"
-        yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "$system_image"
+        yes | "$sdkmanager_path" "$system_image"
     fi
     
     # Create AVD
     print_status "Creating AVD: $EMULATOR_NAME"
-    echo "no" | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd \
+    echo "no" | "$avdmanager_path" create avd \
         -n "$EMULATOR_NAME" \
         -k "$system_image" \
         -d "Nexus 5X"
@@ -579,7 +688,26 @@ cleanup_emulator() {
                 
                 # Delete AVD
                 print_status "Deleting Android AVD: $EMULATOR_NAME"
-                "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" delete avd -n "$EMULATOR_NAME" 2>/dev/null || true
+                # Find avdmanager
+                local avdmanager_path=""
+                local possible_paths=(
+                    "$ANDROID_HOME/cmdline-tools/latest/bin"
+                    "$ANDROID_HOME/cmdline-tools/9.0/bin"
+                    "$ANDROID_HOME/cmdline-tools/8.0/bin"
+                    "$ANDROID_HOME/cmdline-tools/7.0/bin"
+                    "$ANDROID_HOME/tools/bin"
+                )
+                
+                for path in "${possible_paths[@]}"; do
+                    if [[ -f "$path/avdmanager" ]]; then
+                        avdmanager_path="$path/avdmanager"
+                        break
+                    fi
+                done
+                
+                if [[ -n "$avdmanager_path" ]]; then
+                    "$avdmanager_path" delete avd -n "$EMULATOR_NAME" 2>/dev/null || true
+                fi
                 ;;
                 
             "ios")
@@ -751,6 +879,11 @@ fi
 
 # Check Maestro installation
 check_maestro
+
+# Check Android Studio setup if running Android tests
+if [[ "$PLATFORM" == "android" ]] || [[ "$PLATFORM" == "both" ]]; then
+    check_android_studio_setup
+fi
 
 # Create reports directory
 mkdir -p reports
