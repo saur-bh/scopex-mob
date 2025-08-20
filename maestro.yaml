@@ -1,9 +1,8 @@
-# Unified Maestro Configuration for ScopeX Mobile App
-# Works for both Android and iOS platforms
+# Comprehensive Maestro Configuration for ScopeX Mobile App
+# Based on Maestro best practices and advanced features
 
-# Global configuration
 name: "ScopeX Mobile Tests"
-version: "1.0.0"
+version: "2.0.0"
 
 # App configuration
 app:
@@ -13,6 +12,39 @@ app:
   ios:
     appId: "com.scopex.scopexmobilev2"
     appPath: "apps/ios/MyApp.app"
+
+# Test output directory configuration
+testOutputDir: "reports"
+
+# Test flows with proper organization
+flows:
+  - "flows/smoke/*.yaml"           # Smoke tests
+  - "flows/regression/*.yaml"      # Regression tests
+  - "flows/feature/*.yaml"         # Feature-specific tests
+  - "flows/integration/*.yaml"     # Integration tests
+
+# Execution order for sequential tests
+executionOrder:
+  continueOnFailure: false
+  flowsOrder:
+    - "app-launch"
+    - "guest-user-journey"
+    - "main-navigation"
+
+# Environment variables
+env:
+  TEST_ENVIRONMENT: "staging"
+  PLATFORM: "${maestro.platform}"
+  TIMESTAMP: "${Date.now()}"
+  DEVICE_ID: "${maestro.deviceId}"
+
+# Test configuration
+testing:
+  format: "HTML"
+  output: "reports"
+  verbose: true
+  debug: true
+  analyze: true  # Enable AI analysis
 
 # Device configuration
 device:
@@ -27,30 +59,19 @@ device:
       minVersion: "14.0"
       targetVersion: "17.0"
 
-# Test configuration
-testing:
-  timeouts:
-    appLaunch: 15000
-    elementWait: 10000
-    permissionDialog: 5000
-  
-  capabilities:
-    android:
-      autoGrantPermissions: true
-      noReset: false
-      unicodeKeyboard: true
-    ios:
-      autoAcceptAlerts: false
-      autoDismissAlerts: false
+# Timeout configuration
+timeouts:
+  appLaunch: 15000
+  elementWait: 10000
+  permissionDialog: 5000
+  networkRequest: 30000
 
-# Test flows
-flows:
-  - "flows/guest-user-flow.yaml"
-  - "flows/auth-flow.yaml"
-  - "flows/home-screen-flow.yaml"
-
-# Environment variables
-env:
-  TEST_ENVIRONMENT: "staging"
-  MAESTRO_TIMEOUT: "30000"
-  SCREENSHOT_ON_FAILURE: "true"
+# Capabilities
+capabilities:
+  android:
+    autoGrantPermissions: true
+    noReset: false
+    unicodeKeyboard: true
+  ios:
+    autoAcceptAlerts: false
+    autoDismissAlerts: false

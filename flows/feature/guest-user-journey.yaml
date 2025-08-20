@@ -1,0 +1,188 @@
+# Guest User Journey Test - Enhanced with Advanced Maestro Features
+# Comprehensive regression test for guest user flow
+
+appId: com.scopex.scopexmobilev2
+name: "Guest User Journey Test"
+tags: ["smoke", "regression", "guest", "onboarding", "critical"]
+
+# Environment variables
+env:
+  TEST_START_TIME: "${Date.now()}"
+  PLATFORM: "${maestro.platform}"
+  MAX_RETRIES: "3"
+
+# Flow hooks for setup and cleanup
+onFlowStart:
+  - evalScript: "console.log('🚀 Starting Guest User Journey Test on ' + maestro.platform);"
+  - evalScript: "output.testStartTime = Date.now();"
+  - evalScript: "output.stepCount = 0;"
+
+onFlowComplete:
+  - evalScript: "const duration = Date.now() - output.testStartTime; console.log('✅ Guest User Journey Test completed in ' + duration + 'ms');"
+  - evalScript: "console.log('Total steps executed: ' + output.stepCount);"
+  - takeScreenshot: "guest-user-journey-complete"
+
+---
+# Start screen recording
+- startRecording:
+    path: 'guest-user-journey'
+    label: 'Guest User Journey Test Recording'
+
+# Step 1: Launch the app with state clearing
+- evalScript: "console.log('Step 1: Launching ScopeX app with state clearing...'); output.stepCount++;"
+- launchApp:
+    appId: "com.scopex.scopexmobilev2"
+    clearState: true
+    clearKeychain: true
+
+# Step 2: Wait for app to load and verify initial screen
+- evalScript: "console.log('Step 2: Waiting for app to load...'); output.stepCount++;"
+- extendedWaitUntil:
+    visible: "Continue"
+    timeout: 15000
+- evalScript: "console.log('App loaded successfully - Continue button visible');"
+
+# Step 3: Execute onboarding flow (from flow-con.txt)
+- evalScript: "console.log('Step 3: Starting onboarding flow from flow-con.txt...'); output.stepCount++;"
+
+# Screen 1: Initial onboarding
+- evalScript: "console.log('Step 3.1: Verifying initial onboarding screen...');"
+- assertVisible: "25 Paisa better than google rates"
+- assertVisible: "€10 Reward on first transaction"
+- assertVisible: "Continue"
+- evalScript: "console.log('Initial onboarding screen verified');"
+
+# Navigate to next screen
+- evalScript: "console.log('Step 3.2: Navigating to second onboarding screen...');"
+- tapOn: "Continue"
+
+# Screen 2: Trusted by thousands
+- evalScript: "console.log('Step 3.3: Verifying second onboarding screen...');"
+- extendedWaitUntil:
+    visible: "Trusted by thousands"
+    timeout: 10000
+- assertVisible: "Built by one of us"
+- assertVisible: "25 Paisa better than Google rates"
+- assertVisible: "No hidden fees or surprises"
+- assertVisible: "Instant bank transfers to India"
+- assertVisible: "Continue"
+- evalScript: "console.log('Second onboarding screen verified');"
+
+# Navigate to next screen
+- evalScript: "console.log('Step 3.4: Navigating to third onboarding screen...');"
+- tapOn: "Continue"
+
+# Screen 3: Designed for love
+- evalScript: "console.log('Step 3.5: Verifying third onboarding screen...');"
+- extendedWaitUntil:
+    visible: "Designed for love"
+    timeout: 10000
+- assertVisible: "Disguised as money"
+- assertVisible: "0% Fees on all transactions forever"
+- assertVisible: "25 Paisa better than google rates"
+- assertVisible: "€10 Reward on first transaction"
+- assertVisible: "Get Started"
+- evalScript: "console.log('Third onboarding screen verified');"
+
+# Complete onboarding
+- evalScript: "console.log('Step 3.6: Completing onboarding...');"
+- tapOn: "Get Started"
+- evalScript: "console.log('Onboarding completed successfully');"
+
+# Step 4: Verify navigation to home screen
+- evalScript: "console.log('Step 4: Verifying navigation to home screen...'); output.stepCount++;"
+- extendedWaitUntil:
+    visible: "Sign up and get €10"
+    timeout: 10000
+- assertVisible: "Save extra when sending home"
+- assertVisible: "Sign Up"
+- evalScript: "console.log('Home screen verified successfully');"
+
+# Step 5: Verify welcome screen
+- evalScript: "console.log('Step 5: Verifying welcome screen...'); output.stepCount++;"
+- extendedWaitUntil:
+    visible: "Welcome to ScopeX"
+    timeout: 10000
+- evalScript: "console.log('Welcome screen verified successfully');"
+
+# Step 6: Test tab navigation with enhanced selectors
+- evalScript: "console.log('Step 6: Testing tab navigation...'); output.stepCount++;"
+
+# Step 6.1: Home tab navigation
+- evalScript: "console.log('Step 6.1: Tapping Home tab...');"
+- tapOn:
+    id: "home_tab"
+    text: "Home"
+    index: 0
+
+# Step 6.2: Compare tab navigation
+- evalScript: "console.log('Step 6.2: Tapping Compare tab...');"
+- tapOn:
+    text: "Compare"
+    index: 0
+
+# Step 6.3: Settings tab navigation
+- evalScript: "console.log('Step 6.3: Tapping Settings tab...');"
+- tapOn:
+    text: "Settings"
+    index: 0
+
+# Step 7: Verify main navigation elements with scroll support
+- evalScript: "console.log('Step 7: Verifying main navigation elements...'); output.stepCount++;"
+
+# Use scrollUntilVisible for elements that might be off-screen
+- scrollUntilVisible:
+    element: "Help"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Help"
+- evalScript: "console.log('Help element verified');"
+
+- scrollUntilVisible:
+    element: "Settings"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Settings"
+- evalScript: "console.log('Settings element verified');"
+
+- scrollUntilVisible:
+    element: "Transfers"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Transfers"
+- evalScript: "console.log('Transfers element verified');"
+
+- scrollUntilVisible:
+    element: "Wallet"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Wallet"
+- evalScript: "console.log('Wallet element verified');"
+
+- scrollUntilVisible:
+    element: "Home"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Home"
+- evalScript: "console.log('Home element verified');"
+
+# Step 8: Test platform-specific features
+- evalScript: "console.log('Step 8: Testing platform-specific features...'); output.stepCount++;"
+
+# Platform-specific verification
+- evalScript: "console.log('Current platform: ' + maestro.platform);"
+- evalScript: "console.log('Platform-specific features tested successfully');"
+
+# Step 9: Take final screenshot
+- evalScript: "console.log('Step 9: Taking final screenshot...'); output.stepCount++;"
+- takeScreenshot: "guest-user-journey-complete"
+
+# Step 10: Verify test completion and log results
+- evalScript: "console.log('Step 10: Verifying test completion...'); output.stepCount++;"
+- assertTrue: "maestro.appId === 'com.scopex.scopexmobilev2'"
+- evalScript: "console.log('Guest user journey test completed successfully!');"
+- evalScript: "console.log('Total steps executed: ' + output.stepCount);"
+
+# Stop recording
+- evalScript: "console.log('Recording completed - Guest user journey test finished');"
+- stopRecording

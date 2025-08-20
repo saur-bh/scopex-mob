@@ -1,0 +1,44 @@
+# Template Flow - Use this as a base for new test cases
+# Copy this file and modify for your specific test scenario
+
+appId: com.scopex.scopexmobilev2
+name: "Template Test Flow"
+tags: ["template", "example"]
+
+---
+# Start screen recording
+- startRecording:
+    path: 'template-test'
+    label: 'Template Test Recording'
+
+# Step 1: Launch the app
+- evalScript: "console.log('Step 1: Launching app...');"
+- launchApp
+
+# Step 2: Wait for app to load
+- evalScript: "console.log('Step 2: Waiting for app to load...');"
+- assertVisible: "Continue"
+- evalScript: "console.log('App loaded successfully');"
+
+# Step 3: Your test steps here
+- evalScript: "console.log('Step 3: Performing test action...');"
+- tapOn: "Continue"
+- evalScript: "console.log('Test action completed');"
+
+# Step 4: Verify expected results
+- evalScript: "console.log('Step 4: Verifying results...');"
+- assertVisible: "Expected Element"
+- evalScript: "console.log('Results verified successfully');"
+
+# Step 5: Take screenshot
+- evalScript: "console.log('Step 5: Taking screenshot...');"
+- takeScreenshot: "template-test-complete"
+
+# Step 6: Final verification
+- evalScript: "console.log('Step 6: Final verification...');"
+- assertTrue: "maestro.appId === 'com.scopex.scopexmobilev2'"
+- evalScript: "console.log('Template test completed successfully!');"
+
+# Stop recording
+- evalScript: "console.log('Recording completed - Template test finished');"
+- stopRecording
