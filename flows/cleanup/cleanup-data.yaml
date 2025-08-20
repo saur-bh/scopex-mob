@@ -1,0 +1,10 @@
+# Cleanup Data Flow
+# Performs post-test cleanup for both Android and iOS
+
+appId: com.scopex.scopexmobilev2
+name: "Cleanup Data"
+tags: ["cleanup", "teardown"]
+
+---
+# Clear any remaining state
+- clearState

@@ -1,12 +1,15 @@
 # iOS Permissions Flow
-# Handles iOS-specific permission dialogs
+# Handles iOS-specific permission dialogs with enhanced logging
 
-appId: ${APP_ID}
+appId: com.scopex.scopexmobilev2
 name: "iOS Permissions"
 tags: ["ios", "permissions"]
 
 ---
-# Handle iOS permission dialogs
+# Handle iOS permission dialogs with logging
+- runScript: |
+    console.log("Handling iOS permissions...");
+
 - tapOn:
     point: "84%,25%"
     optional: true
@@ -18,6 +21,7 @@ tags: ["ios", "permissions"]
     optional: true
 
 # Handle notification permissions
+---
 - tapOn:
     text: "Allow"
     optional: true
@@ -26,6 +30,7 @@ tags: ["ios", "permissions"]
     optional: true
 
 # Handle location permissions
+---
 - tapOn:
     text: "Allow While Using App"
     optional: true
@@ -37,9 +42,43 @@ tags: ["ios", "permissions"]
     optional: true
 
 # Handle camera permissions
+---
 - tapOn:
     text: "OK"
     optional: true
 - tapOn:
     text: "Cancel"
     optional: true
+
+# Handle contacts permissions
+---
+- tapOn:
+    text: "Allow"
+    optional: true
+- tapOn:
+    text: "Don't Allow"
+    optional: true
+
+# Handle microphone permissions
+---
+- tapOn:
+    text: "Allow"
+    optional: true
+- tapOn:
+    text: "Don't Allow"
+    optional: true
+
+# Handle photos permissions
+---
+- tapOn:
+    text: "Allow"
+    optional: true
+- tapOn:
+    text: "Don't Allow"
+    optional: true
+
+# Log permission handling completion
+---
+- runScript: |
+    console.log("iOS permissions handled successfully");
+    output.iosPermissionsHandled = true;

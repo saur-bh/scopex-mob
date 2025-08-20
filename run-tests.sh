@@ -237,6 +237,7 @@ run_flow() {
     # Add recording option
     if [ "$RECORD" = true ]; then
         maestro_cmd="$maestro_cmd --record"
+        print_status "Video recording enabled"
     fi
     
     # Execute the command
@@ -468,6 +469,10 @@ fi
 
 if [ "$RECORD" = true ]; then
     print_status "Test recordings available in reports/ directory"
+fi
+
+if [ "$OUTPUT_FORMAT" = "HTML" ]; then
+    print_status "HTML report generated - open in browser to view"
 fi
 
 print_status "For advanced features, see: https://docs.maestro.dev/advanced/"

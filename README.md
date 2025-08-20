@@ -1,6 +1,6 @@
 # ScopeX Mobile Automation Framework
 
-A comprehensive, production-ready Maestro-based mobile testing framework for the ScopeX application that works seamlessly on both Android and iOS platforms. Built with advanced features from the [Maestro documentation](https://docs.maestro.dev/) including continuous testing, advanced reporting, and cross-platform automation.
+A comprehensive, production-ready Maestro-based mobile testing framework for the ScopeX application that works seamlessly on both Android and iOS platforms. Built with advanced features from the [Maestro documentation](https://docs.maestro.dev/) including flow hooks, JavaScript integration, video recording, and cross-platform automation.
 
 ## 🚀 Quick Start
 
@@ -9,202 +9,115 @@ A comprehensive, production-ready Maestro-based mobile testing framework for the
 ```bash
 # One-command setup that checks all requirements
 ./setup.sh --install-missing --quick-test
-
-# Or just check current setup
-./setup.sh --check-only
 ```
-
-The setup script automatically:
-- ✅ Detects your operating system (Windows/macOS/Linux)
-- ✅ Checks for Java, Android SDK, Xcode (macOS only)
-- ✅ Installs Maestro CLI
-- ✅ Verifies device connectivity
-- ✅ Creates Android emulator if needed
-- ✅ Runs a quick test to verify everything works
 
 ### Manual Setup
 
-#### Prerequisites
+1. **Install Maestro**:
+   ```bash
+   curl -Ls "https://get.maestro.mobile.dev" | bash
+   ```
 
-- **Windows**: Android testing only (iOS requires macOS)
-- **macOS**: Full Android + iOS testing support
-- **Linux**: Android testing only
+2. **Install Dependencies**:
+   - **macOS**: Xcode, iOS Simulator
+   - **Windows/Linux**: Android SDK, ADB
 
-#### Install Maestro
+3. **Clone and Setup**:
+   ```bash
+   git clone https://github.com/saur-bh/scopex-mob.git
+   cd scopex-mob
+   chmod +x *.sh
+   ```
 
-```bash
-# Install Maestro CLI (all platforms)
-curl -Ls "https://get.maestro.mobile.dev" | bash
-
-# Verify installation
-maestro --version
-```
-
-#### Platform-Specific Setup
-
-**Android (All Platforms):**
-```bash
-# Install Java 17 and Android SDK
-# Windows: choco install openjdk17 androidstudio
-# macOS: brew install openjdk@17 android-sdk
-# Linux: sudo apt-get install openjdk-17-jdk
-
-# Start Android emulator
-emulator -avd Pixel_7_API_34
-
-# Or connect physical device
-adb devices
-```
-
-**iOS (macOS only):**
-```bash
-# Install Xcode from App Store
-# Start iOS Simulator
-open -a Simulator
-
-# Verify simulator is running
-xcrun simctl list devices booted
-```
-
-## 🧪 Running Tests
+## 🎯 Test Execution
 
 ### Simple Test Execution
 
 ```bash
-# Run guest user flow on Android (default)
-./run-tests.sh
-
 # Run guest user flow on iOS
-./run-tests.sh -p ios
+./run-tests.sh -p ios -f guest-user-flow.yaml
 
-# Run on both platforms sequentially
-./run-tests.sh -p both
+# Run on Android
+./run-tests.sh -p android -f guest-user-flow.yaml
 
-# Run on both platforms in parallel
-./run-tests.sh -p both --parallel
+# Run on both platforms
+./run-tests.sh -p both -f guest-user-flow.yaml
 ```
 
-### Advanced Test Execution
-
-Based on [Maestro's advanced features](https://docs.maestro.dev/advanced/):
+### Enhanced iOS Testing
 
 ```bash
-# Run with specific device
-./run-tests.sh -d "iPhone 15 Pro" -p ios
+# Run with all enhanced features (recording, HTML reports, debug)
+./run-ios-tests.sh --debug
 
-# Run with tags (flows tagged with 'smoke' or 'auth')
-./run-tests.sh --include-tags smoke,auth
+# Run without recording
+./run-ios-tests.sh --no-record
 
-# Exclude certain flows
-./run-tests.sh --exclude-tags slow,integration
+# Run without HTML reports
+./run-ios-tests.sh --no-html
 
-# Different output formats
-./run-tests.sh --format html          # HTML report
-./run-tests.sh --format junit         # JUnit XML (default)
-./run-tests.sh --format noop          # Text output only
-
-# Debug mode with detailed logging
-./run-tests.sh --debug --verbose
-
-# Record test execution videos
-./run-tests.sh --record
-
-# Continuous mode - watch for file changes and rerun
-./run-tests.sh --continuous
-
-# Set timeout for tests
-./run-tests.sh -t 300                 # 5 minute timeout
-
-# Combine multiple options
-./run-tests.sh -p ios --debug --record --include-tags smoke -d "iPhone 15"
+# Run on specific device
+./run-ios-tests.sh -d "iPhone 15 Pro" --debug
 ```
 
-### Available Options
+### Advanced Options
 
-**Platform Options:**
-- `-p, --platform`: Platform to test (`android|ios|both`) [default: android]
-- `-d, --device`: Specific device/emulator to use
+```bash
+# Run with HTML reports
+./run-tests.sh -p ios -f guest-user-flow.yaml --format HTML
 
-**Test Options:**
-- `-f, --flow`: Flow file to run [default: guest-user-flow.yaml]
-- `-t, --timeout`: Test timeout in seconds
-- `--include-tags`: Run flows with specific tags (comma-separated)
-- `--exclude-tags`: Exclude flows with specific tags (comma-separated)
+# Run with debug output
+./run-tests.sh -p ios -f guest-user-flow.yaml --debug
 
-**Output Options:**
-- `--format`: Output format (`junit|html|noop`) [default: junit]
-- `-v, --verbose`: Enable verbose output
-- `--debug`: Enable debug mode with detailed logs
+# Run with specific timeout
+./run-tests.sh -p ios -f guest-user-flow.yaml --timeout 60000
 
-**Execution Options:**
-- `--parallel`: Run tests in parallel (when using 'both' platform)
-- `--continuous`: Run in continuous mode (watch for changes)
-- `--record`: Record test execution video
+# Run with tags
+./run-tests.sh -p ios --include-tags "smoke,guest"
 
-**Help:**
-- `-h, --help`: Show detailed help message
+# Run in continuous mode (watch for changes)
+./run-tests.sh -p ios -f guest-user-flow.yaml --continuous
+```
 
 ## 📁 Project Structure
 
 ```
 mobile-automation-scopex/
-├── flows/                          # Test flow definitions
-│   ├── guest-user-flow.yaml        # Main guest user journey
-│   ├── auth-flow.yaml              # Authentication flows
-│   ├── home-screen-flow.yaml       # Home screen tests
-│   └── permissions/                # Platform-specific permissions
+├── flows/                          # Test flows
+│   ├── guest-user-flow.yaml       # Enhanced guest user journey
+│   ├── auth-flow.yaml             # Authentication flow
+│   ├── home-screen-flow.yaml      # Home screen navigation
+│   ├── setup/                     # Setup flows
+│   │   └── clear-app-data.yaml    # App data clearing
+│   ├── cleanup/                   # Cleanup flows
+│   │   └── cleanup-data.yaml      # Post-test cleanup
+│   └── permissions/               # Permission handling
 │       ├── android-permissions.yaml
 │       └── ios-permissions.yaml
-├── apps/                           # Application binaries
+├── apps/                          # App binaries
 │   ├── android/
-│   │   └── app-release.apk         # Android APK
+│   │   └── app-release.apk
 │   └── ios/
-│       └── MyApp.app/              # iOS app bundle
-├── reports/                        # Test execution reports
-├── maestro.yaml                    # Unified configuration
-├── run-tests.sh                    # Test runner script
-└── README.md                       # This file
-```
-
-## 📱 Platform Support
-
-### Android Testing
-
-**Requirements:**
-- Java 11+ and Android SDK
-- Android emulator or physical device
-- ADB in PATH
-
-**Setup:**
-```bash
-# Install Android SDK and create emulator
-# Then run tests
-./run-tests.sh -p android
-```
-
-### iOS Testing
-
-**Requirements:**
-- macOS with Xcode installed
-- iOS Simulator or physical device
-
-**Setup:**
-```bash
-# Install Xcode from App Store
-# Start Simulator
-open -a Simulator
-
-# Run tests
-./run-tests.sh -p ios
+│       └── MyApp.app
+├── reports/                       # Test reports (auto-generated)
+├── screenshots/                   # Screenshots (auto-generated)
+├── maestro.yaml                   # Unified configuration
+├── run-tests.sh                   # Main test runner
+├── run-ios-tests.sh              # Enhanced iOS test runner
+├── setup.sh                      # Environment setup
+├── MAESTRO_REFERENCE.md          # Maestro documentation reference
+└── README.md                     # This file
 ```
 
 ## 🔧 Configuration
 
-### Maestro Configuration
-
-The framework uses `maestro.yaml` for unified configuration following [Maestro's configuration guidelines](https://docs.maestro.dev/api-reference/configuration):
+### Maestro Configuration (`maestro.yaml`)
 
 ```yaml
+# Unified Maestro Configuration for ScopeX Mobile App
+name: "ScopeX Mobile Tests"
+version: "1.0.0"
+
 # App configuration
 app:
   android:
@@ -214,14 +127,14 @@ app:
     appId: "com.scopex.scopexmobilev2"
     appPath: "apps/ios/MyApp.app"
 
-# Device preferences
+# Device configuration
 device:
   android:
     preferred: ["Pixel_7_API_34", "Pixel_6_API_33"]
   ios:
     preferred: ["iPhone 15", "iPhone 14", "iPhone 13"]
 
-# Test configuration with timeouts
+# Test configuration
 testing:
   timeouts:
     appLaunch: 15000
@@ -231,213 +144,174 @@ testing:
 
 ### Environment Variables
 
-The framework automatically sets these variables:
-- `PLATFORM`: Current platform (android/ios)
-- `APP_ID`: Application bundle ID
-- `TEST_ENVIRONMENT`: Test environment (staging)
-- `MAESTRO_TIMEOUT`: Default test timeout
+```bash
+# Set test environment
+export TEST_ENVIRONMENT="staging"
+export MAESTRO_TIMEOUT="30000"
+export SCREENSHOT_ON_FAILURE="true"
+```
 
-### Flow Configuration
+## 🎨 Enhanced Features
 
-Each test flow supports [Maestro's flow configuration](https://docs.maestro.dev/api-reference/configuration/flow-configuration):
+### 1. Flow Hooks (onFlowStart/onFlowComplete)
 
 ```yaml
-# Example flow with tags and metadata
-appId: ${APP_ID}
-name: "Guest User Journey"
-tags: ["guest", "onboarding", "smoke"]
+# Automatic setup and cleanup
+onFlowStart:
+  - runFlow: setup/clear-app-data.yaml
+  - evalScript: ${output.flowStartTime = Date.now();}
 
-# Platform-specific conditions
----
-- runFlow:
-    when:
-      platform: android
-    file: permissions/android-permissions.yaml
+onFlowComplete:
+  - runFlow: cleanup/cleanup-data.yaml
+  - evalScript: ${const duration = Date.now() - output.flowStartTime;}
+```
+
+### 2. JavaScript Integration
+
+```yaml
+# Dynamic content and logging
+- evalScript: ${console.log('Testing on', maestro.platform);}
+- evalScript: ${output.testData = 'dynamic content';}
+
+# Environment variables
+env:
+  PLATFORM: ${maestro.platform}
+  START_TIME: ${Date.now()}
+```
+
+### 3. Permission Management
+
+```yaml
+# Comprehensive permission configuration
+- launchApp:
+    permissions:
+      all: deny
+      camera: allow
+      location: allow
+      notifications: allow
+      contacts: allow
+      microphone: allow
+```
+
+### 4. Video Recording
+
+```yaml
+# Start and stop recording
+- startRecording
+# ... test steps ...
+- stopRecording
 ```
 
 ## 📊 Test Reports
 
-Reports are automatically generated in the `reports/` directory:
+### HTML Reports
+- **Location**: `reports/ios_enhanced_*/report.html`
+- **Features**: Screenshots, test results, execution timeline
+- **Format**: Beautiful, interactive HTML reports
+
+### Debug Output
+- **Location**: `reports/ios_enhanced_*/debug/`
+- **Contents**: Detailed logs, screenshots, performance metrics
+
+### Video Recordings
+- **Location**: `reports/ios_enhanced_*/`
+- **Format**: MP4 video files of test execution
+
+## 🛠️ Available Commands
+
+### Main Test Runner (`run-tests.sh`)
 
 ```bash
-reports/
-├── android_20241219_143022/        # Android test results
-├── ios_20241219_143045/            # iOS test results
-└── junit/                          # JUnit XML reports
+Usage: ./run-tests.sh [OPTIONS]
+
+Options:
+  -p, --platform PLATFORM    Platform to test (android, ios, both)
+  -f, --flow FLOW            Flow file to run
+  --format FORMAT            Output format (JUNIT, HTML, NOOP)
+  --debug                    Enable debug mode
+  --continuous               Run in continuous mode
+  --timeout TIMEOUT          Test timeout in milliseconds
+  --include-tags TAGS        Include flows with specific tags
+  --exclude-tags TAGS        Exclude flows with specific tags
+  -h, --help                 Show help message
 ```
 
-## 🔄 CI/CD Integration
+### iOS Test Runner (`run-ios-tests.sh`)
 
-### GitHub Actions Example
+```bash
+Usage: ./run-ios-tests.sh [OPTIONS]
 
-```yaml
-name: Mobile Tests
-on: [push, pull_request]
-
-jobs:
-  mobile-tests:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install Maestro
-        run: curl -Ls "https://get.maestro.mobile.dev" | bash
-      - name: Start Android Emulator
-        run: |
-          echo "y" | sdkmanager "system-images;android-34;google_apis;x86_64"
-          echo "no" | avdmanager create avd -n Pixel_7_API_34 -k "system-images;android-34;google_apis;x86_64"
-          emulator -avd Pixel_7_API_34 &
-          sleep 60
-      - name: Run Android Tests
-        run: ./run-tests.sh -p android
-      - name: Upload Reports
-        uses: actions/upload-artifact@v3
-        with:
-          name: test-reports
-          path: reports/
+Options:
+  -f, --flow FLOW            Flow file to run [default: guest-user-flow.yaml]
+  -d, --device DEVICE        Specific iOS device/simulator to use
+  --no-record                Disable video recording
+  --no-html                  Disable HTML report generation
+  --debug                    Enable debug mode with detailed logs
+  -v, --verbose              Enable verbose output
+  -h, --help                 Show this help message
 ```
 
-## 🛠️ Troubleshooting
+## 🔍 Troubleshooting
 
 ### Common Issues
 
-**Maestro not found:**
+1. **Android Emulator Interference**:
+   ```bash
+   # iOS test runner automatically handles this
+   ./run-ios-tests.sh --debug
+   ```
+
+2. **iOS Simulator Not Starting**:
+   ```bash
+   # Manual simulator start
+   xcrun simctl boot "iPhone 16 Pro"
+   ```
+
+3. **Permission Issues**:
+   ```bash
+   # Check app installation
+   xcrun simctl listapps booted | grep scopex
+   ```
+
+### Debug Mode
+
 ```bash
-# Install Maestro
-curl -Ls "https://get.maestro.mobile.dev" | bash
+# Enable comprehensive debugging
+./run-tests.sh -p ios -f guest-user-flow.yaml --debug
+
+# Check debug logs
+ls -la reports/debug_*/
 ```
 
-**No Android device:**
-```bash
-# Start emulator
-emulator -avd Pixel_7_API_34
+## 📚 Documentation
 
-# Or connect device
-adb devices
-```
+- **[Maestro Commands Reference](https://docs.maestro.dev/api-reference/commands)**
+- **[Maestro Advanced Features](https://docs.maestro.dev/advanced/)**
+- **[Maestro JavaScript Guide](https://docs.maestro.dev/advanced/javascript/run-javascript)**
+- **[Maestro Hooks Documentation](https://docs.maestro.dev/advanced/onflowstart-onflowcomplete-hooks)**
+- **[Maestro Permissions Guide](https://docs.maestro.dev/advanced/configuring-permissions)**
 
-**No iOS simulator:**
-```bash
-# Start Simulator
-open -a Simulator
+## 🤝 Contributing
 
-# Check available devices
-xcrun simctl list devices
-```
+1. Fork the repository
+2. Create a feature branch
+3. Add your test flows
+4. Test thoroughly
+5. Submit a pull request
 
-**App installation fails:**
-```bash
-# Android
-adb install -r apps/android/app-release.apk
+## 📄 License
 
-# iOS
-xcrun simctl install booted apps/ios/MyApp.app
-```
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🚀 Advanced Features
+## 🆘 Support
 
-### Maestro Commands Reference
-
-The framework supports all [Maestro commands](https://docs.maestro.dev/api-reference/commands):
-
-**UI Interactions:**
-- `tapOn`, `doubleTapOn`, `longPressOn`: Touch interactions
-- `inputText`, `eraseText`: Text input
-- `scroll`, `scrollUntilVisible`: Scrolling actions
-- `swipe`: Gesture navigation
-- `pressKey`: Keyboard interactions
-
-**Assertions:**
-- `assertVisible`, `assertNotVisible`: Element visibility
-- `assertTrue`: Custom assertions
-- `assertWithAI`: AI-powered assertions (experimental)
-
-**Navigation & Control:**
-- `launchApp`, `stopApp`, `killApp`: App lifecycle
-- `back`: Navigation
-- `setOrientation`: Device rotation
-- `setLocation`: GPS simulation
-
-**Advanced Commands:**
-- `runFlow`: [Nested flows](https://docs.maestro.dev/advanced/nested-flows)
-- `runScript`: JavaScript execution
-- `takeScreenshot`: Capture screenshots
-- `startRecording`, `stopRecording`: Video recording
-
-### Using JavaScript in Flows
-
-Leverage [Maestro's JavaScript support](https://docs.maestro.dev/advanced/using-javascript-in-maestro) for dynamic testing:
-
-```yaml
-- runScript: |
-    const currentDate = new Date().toISOString().split('T')[0];
-    output.testDate = currentDate;
-
-- inputText: ${output.testDate}
-```
-
-### Conditional Testing
-
-Use [conditions](https://docs.maestro.dev/advanced/conditions) for platform-specific logic:
-
-```yaml
-- tapOn:
-    when:
-      platform: android
-    id: "com.android.permissioncontroller:id/permission_allow_button"
-
-- tapOn:
-    when:
-      platform: ios
-    text: "Allow"
-```
-
-### Test Suite Organization
-
-Following [Maestro's best practices](https://docs.maestro.dev/advanced/structuring-your-test-suite):
-
-- **Atomic Tests**: Each flow tests one specific feature
-- **Reusable Components**: Use `runFlow` for common actions
-- **Tag-based Organization**: Group flows with meaningful tags
-- **Data-driven Testing**: Use environment variables and scripts
-
-## 🔗 Maestro Documentation Links
-
-### Essential References
-- **[Getting Started](https://docs.maestro.dev/getting-started/what-is-maestro)**: Introduction to Maestro
-- **[Commands API](https://docs.maestro.dev/api-reference/commands)**: Complete command reference
-- **[Advanced Features](https://docs.maestro.dev/advanced/)**: Advanced testing techniques
-- **[Configuration](https://docs.maestro.dev/api-reference/configuration)**: Configuration options
-
-### Advanced Topics
-- **[Nested Flows](https://docs.maestro.dev/advanced/nested-flows)**: Reusable test components
-- **[JavaScript Support](https://docs.maestro.dev/advanced/using-javascript-in-maestro)**: Dynamic test logic
-- **[Conditions & Loops](https://docs.maestro.dev/advanced/conditions)**: Control flow
-- **[Wait Commands](https://docs.maestro.dev/advanced/wait-commands-in-maestro-for-reliable-tests)**: Reliable timing
-
-### Platform-Specific
-- **[Android Testing](https://docs.maestro.dev/platform-support/android-views)**: Android-specific features
-- **[iOS Testing](https://docs.maestro.dev/platform-support/ios-uikit)**: iOS-specific features
-- **[React Native](https://docs.maestro.dev/platform-support/react-native)**: React Native support
-- **[Flutter](https://docs.maestro.dev/platform-support/flutter)**: Flutter support
-
-### CI/CD Integration
-- **[GitHub Actions](https://docs.maestro.dev/ci-integration/github-actions)**: GitHub workflow integration
-- **[Running on CI](https://docs.maestro.dev/getting-started/running-flows-on-ci)**: General CI setup
-- **[Maestro Cloud](https://docs.maestro.dev/cloud)**: Cloud testing platform
-
-## 📚 Framework Resources
-
-### Local Documentation
-- **Setup Guide**: `./setup.sh --help`
-- **Test Runner**: `./run-tests.sh --help`
-- **Flow Examples**: Check `flows/` directory
-
-### External Resources
-- **[Maestro GitHub](https://github.com/mobile-dev-inc/maestro)**: Source code and issues
-- **[Community Slack](https://maestro.mobile.dev/join-slack)**: Community support
-- **[Mobile Testing Best Practices](https://docs.maestro.dev/best-practices)**: Testing guidelines
+- **Issues**: [GitHub Issues](https://github.com/saur-bh/scopex-mob/issues)
+- **Documentation**: [Maestro Docs](https://docs.maestro.dev/)
+- **Community**: [Maestro Community](https://github.com/mobile-dev-inc/maestro)
 
 ---
 
-**Note:** This framework is built on Maestro's advanced capabilities and follows industry best practices for mobile test automation. All platform-specific logic is handled automatically, allowing you to focus on writing comprehensive test flows.
+**Framework Version**: 2.0.0 (Enhanced)  
+**Last Updated**: August 20, 2025  
+**Status**: ✅ Production Ready
 

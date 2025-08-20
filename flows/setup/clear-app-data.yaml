@@ -1,0 +1,15 @@
+# Clear App Data Setup Flow
+# Clears app data and state for both Android and iOS
+
+appId: com.scopex.scopexmobilev2
+name: "Clear App Data"
+tags: ["setup", "cleanup"]
+
+---
+# Clear app state and data
+- clearState
+- clearKeychain
+
+# Kill and relaunch app to ensure clean state
+---
+- killApp
