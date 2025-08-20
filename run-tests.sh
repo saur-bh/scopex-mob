@@ -248,11 +248,11 @@ create_android_emulator() {
     if [[ "$mac_arch" == "arm64" ]]; then
         print_status "Detected Apple Silicon Mac (arm64)"
         system_image="system-images;android-34;google_apis;arm64-v8a"
-        device_type="Pixel_6"
+        device_type="pixel_6"
     else
         print_status "Detected Intel Mac (x86_64)"
         system_image="system-images;android-34;google_apis;x86_64"
-        device_type="Nexus_5X"
+        device_type="Nexus 5X"
     fi
     
     print_status "Using system image: $system_image"
@@ -349,17 +349,32 @@ start_android_emulator() {
     # Wait for emulator to boot
     print_status "Waiting for emulator to boot..."
     local count=0
-    while [[ $count -lt 120 ]]; do
+    while [[ $count -lt 180 ]]; do
         if adb devices | grep -q "emulator.*device$"; then
-            print_success "Android emulator is ready"
-            return 0
+            # Additional check to ensure Android system is fully booted
+            local boot_completed=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r\n')
+            if [[ "$boot_completed" == "1" ]]; then
+                # Wait a bit more for package manager to be ready
+                print_status "Android system booted, waiting for package manager..."
+                sleep 10
+                
+                # Test if package manager is working
+                if adb shell pm list packages >/dev/null 2>&1; then
+                    print_success "Android emulator is ready"
+                    return 0
+                else
+                    print_status "Package manager not ready yet, waiting..."
+                fi
+            else
+                print_status "Android system still booting..."
+            fi
         fi
         sleep 2
         count=$((count + 2))
         print_status "Waiting... ($count seconds)"
     done
     
-    print_error "Android emulator failed to boot within 120 seconds"
+    print_error "Android emulator failed to boot within 180 seconds"
     return 1
 }
 
