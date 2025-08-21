@@ -58,6 +58,7 @@ show_usage() {
     echo "  --start-device <platform>    Start device (android/ios)"
     echo "  --list-devices              List available devices"
     echo "  --device <device-id>        Use specific device"
+    echo "  --clean-reports             Force clean all reports directory"
     echo ""
     echo "Test Execution:"
     echo "  -p, --platform <platform>    Platform to test (android, ios, both)"
@@ -76,6 +77,7 @@ show_usage() {
     echo ""
     echo "Examples:"
     echo "  $0 --start-device android                    # Start Android device"
+    echo "  $0 --clean-reports                          # Force clean all reports"
     echo "  $0 -p android -t \"guest,clear-state\"        # Auto device + app install + run tests"
     echo "  $0 -p ios -t regression                     # Auto device + app install + run tests"
     echo "  $0 flows/feature/wallet-flow.yaml           # Auto platform selection + device + app + run"
@@ -426,6 +428,85 @@ list_devices() {
     maestro device list 2>/dev/null || print_warning "Maestro device list not available"
 }
 
+# Function to clean all reports (force clean)
+clean_all_reports() {
+    local reports_dir="reports"
+    
+    if [[ ! -d "$reports_dir" ]]; then
+        print_status "Reports directory does not exist, creating it..."
+        mkdir -p "$reports_dir"
+        return 0
+    fi
+    
+    print_status "🧹 Force cleaning all reports directory..."
+    
+    # Remove all test run directories
+    local removed_count=0
+    for dir in "$reports_dir"/test-run-*; do
+        if [[ -d "$dir" ]]; then
+            rm -rf "$dir"
+            ((removed_count++))
+            print_status "  🗑️  Removed test run: $(basename "$dir")"
+        fi
+    done
+    
+    # Remove unnecessary directories
+    local unnecessary_dirs=("ai-analysis" "performance" "step-logs" "logs" "recordings" "screenshots")
+    for dir in "${unnecessary_dirs[@]}"; do
+        if [[ -d "$reports_dir/$dir" ]]; then
+            rm -rf "$reports_dir/$dir"
+            print_status "  🗑️  Removed unnecessary directory: $dir"
+        fi
+    done
+    
+    if [[ $removed_count -gt 0 ]]; then
+        print_success "Force cleaned $removed_count test runs and unnecessary directories"
+    else
+        print_status "Reports directory is already clean"
+    fi
+}
+
+# Function to clean reports directory (auto-clean old reports)
+clean_reports_directory() {
+    local reports_dir="reports"
+    
+    if [[ ! -d "$reports_dir" ]]; then
+        print_status "Reports directory does not exist, creating it..."
+        mkdir -p "$reports_dir"
+        return 0
+    fi
+    
+    print_status "🧹 Auto-cleaning reports directory..."
+    
+    # Remove old test run directories (older than 1 day)
+    local removed_count=0
+    for dir in "$reports_dir"/test-run-*; do
+        if [[ -d "$dir" ]]; then
+            # Check if directory is older than 1 day
+            if [[ $(find "$dir" -maxdepth 0 -type d -mtime +1 2>/dev/null) ]]; then
+                rm -rf "$dir"
+                ((removed_count++))
+                print_status "  🗑️  Removed old test run: $(basename "$dir")"
+            fi
+        fi
+    done
+    
+    # Remove unnecessary directories
+    local unnecessary_dirs=("ai-analysis" "performance" "step-logs" "logs" "recordings" "screenshots")
+    for dir in "${unnecessary_dirs[@]}"; do
+        if [[ -d "$reports_dir/$dir" ]]; then
+            rm -rf "$reports_dir/$dir"
+            print_status "  🗑️  Removed unnecessary directory: $dir"
+        fi
+    done
+    
+    if [[ $removed_count -gt 0 ]]; then
+        print_success "Auto-cleaned $removed_count old test runs and unnecessary directories"
+    else
+        print_status "Reports directory is already clean"
+    fi
+}
+
 # Function to create reports directory structure
 create_reports_structure() {
     local base_dir="$1"
@@ -446,31 +527,16 @@ create_reports_structure() {
         return 1
     fi
     
-    if ! mkdir -p "$base_dir/logs"; then
-        print_error "Failed to create logs directory"
-        return 1
-    fi
-    
     if ! mkdir -p "$base_dir/step-logs"; then
         print_error "Failed to create step-logs directory"
         return 1
     fi
     
-
-    
-    if ! mkdir -p "$base_dir/performance"; then
-        print_error "Failed to create performance directory"
-        return 1
-    fi
-    
-    print_status "Created comprehensive reports directory structure:"
+    print_status "Created clean reports directory structure:"
     print_status "  📁 $base_dir"
     print_status "  📸 $base_dir/screenshots"
     print_status "  🎥 $base_dir/recordings"
-    print_status "  📝 $base_dir/logs"
     print_status "  🔍 $base_dir/step-logs"
-
-    print_status "  ⚡ $base_dir/performance"
 }
 
 # Function to organize test outputs
@@ -480,8 +546,6 @@ organize_test_outputs() {
     # Ensure directories exist
     mkdir -p "$output_dir/screenshots"
     mkdir -p "$output_dir/recordings"
-
-    mkdir -p "$output_dir/performance"
     
     # Move screenshots from root directory and output directory
     for file in *.png "$output_dir"/*.png; do
@@ -974,6 +1038,9 @@ run_tests() {
     local parallel="${11}"
     local flow_files=("${@:12}")
     
+    # Clean reports directory before execution
+    clean_reports_directory
+    
     # Set output directory
     if [[ -z "$output_dir" ]]; then
         output_dir="reports/test-run-$(date +%Y%m%d_%H%M%S)"
@@ -1171,6 +1238,7 @@ main() {
     local parallel=false
     local start_device_platform=""
     local list_devices_flag=false
+    local clean_reports_flag=false
     local flow_files=()
     
     # Parse command line arguments
@@ -1182,6 +1250,10 @@ main() {
                 ;;
             --list-devices)
                 list_devices_flag=true
+                shift
+                ;;
+            --clean-reports)
+                clean_reports_flag=true
                 shift
                 ;;
             -p|--platform)
@@ -1260,6 +1332,12 @@ main() {
     
     if [[ "$list_devices_flag" == true ]]; then
         list_devices
+        exit 0
+    fi
+    
+    # Handle clean reports command
+    if [[ "$clean_reports_flag" == true ]]; then
+        clean_all_reports
         exit 0
     fi
     

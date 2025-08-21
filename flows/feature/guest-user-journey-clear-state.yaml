@@ -68,54 +68,25 @@ onFlowComplete:
 
 # Step 6: Test tab navigation with enhanced selectors
 # Home tab navigation
-- tapOn:
-    text: "Home"
-    index: 0
+- tapOn: "Home"
 
 # Compare tab navigation
-- tapOn:
-    text: "Compare"
-    index: 0
-
+- tapOn: "Compare"
 # Settings tab navigation
-- tapOn:
-    text: "Settings"
-    index: 0
+- tapOn: "Settings"
 
 # Step 7: Verify main navigation elements with scroll support
 # Use scrollUntilVisible for elements that might be off-screen
-- scrollUntilVisible:
-    element: "Help"
-    direction: DOWN
-    timeout: 5000
-- assertVisible: "Help"
 
-- scrollUntilVisible:
-    element: "Settings"
-    direction: DOWN
-    timeout: 5000
-- assertVisible: "Settings"
+- tapOn: "Transfers"
+- assertVisible: "Sign up to.*"
 
-- scrollUntilVisible:
-    element: "Transfers"
-    direction: DOWN
-    timeout: 5000
-- assertVisible: "Transfers"
-
-- scrollUntilVisible:
-    element: "Wallet"
-    direction: DOWN
-    timeout: 5000
 - assertVisible: "Wallet"
+- tapOn: "Wallet"
 
-- scrollUntilVisible:
-    element: "Home"
-    direction: DOWN
-    timeout: 5000
-- assertVisible: "Home"
+- assertVisible: '(?i).+\bverify\s+to\s+claim\b.+'
 
-# Step 8: Test platform-specific features
-- evalScript: "output.platform = maestro.platform;"
+
 
 # Step 9: Take final screenshot
 - takeScreenshot: "guest-user-journey-clear-state-complete"
