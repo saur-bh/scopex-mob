@@ -117,11 +117,13 @@ if command_exists adb; then
             fi
         done
     else
-        print_warning "No Android devices connected. Please connect a device or start an emulator."
-        print_status "You can start a device with: ./run-tests.sh --start-device android"
+        print_warning "No Android devices connected."
+        print_status "Auto device management will start a device when needed."
+        print_status "Manual start: ./run-tests.sh --start-device android"
     fi
 else
     print_warning "ADB not found. Please install Android SDK and add it to PATH."
+    print_status "Required for Android testing and auto device management."
 fi
 
 # Check iOS setup (macOS only)
@@ -139,12 +141,17 @@ if [[ "$OS" == "macos" ]]; then
                     print_status "  $line"
                 done
             else
-                print_warning "No iOS simulators running. You can start one with: ./run-tests.sh --start-device ios"
+                print_warning "No iOS simulators running."
+                print_status "Auto device management will start a simulator when needed."
+                print_status "Manual start: ./run-tests.sh --start-device ios"
             fi
         fi
     else
         print_warning "Xcode command line tools not found. Please install Xcode."
+        print_status "Required for iOS testing and auto device management."
     fi
+else
+    print_warning "iOS testing is only supported on macOS"
 fi
 
 # Create comprehensive directory structure
@@ -154,12 +161,8 @@ mkdir -p reports/screenshots
 mkdir -p reports/recordings
 mkdir -p reports/logs
 mkdir -p reports/step-logs
-mkdir -p reports/ai-analysis
 mkdir -p reports/performance
-mkdir -p flows/smoke
-mkdir -p flows/regression
 mkdir -p flows/feature
-mkdir -p flows/integration
 mkdir -p apps/android
 mkdir -p apps/ios
 print_success "Directory structure created"
@@ -170,56 +173,74 @@ print_status "  📸 reports/screenshots/"
 print_status "  🎥 reports/recordings/"
 print_status "  📝 reports/logs/"
 print_status "  🔍 reports/step-logs/"
-print_status "  🤖 reports/ai-analysis/"
 print_status "  ⚡ reports/performance/"
 
 print_status "Test flows structure:"
-print_status "  🧪 flows/smoke/"
-print_status "  🔄 flows/regression/"
-print_status "  ⚙️ flows/feature/"
-print_status "  🔗 flows/integration/"
+print_status "  ⚙️ flows/feature/ (all flows organized here)"
+print_status "  📱 Clear state flows: app-launch-clear-state.yaml, guest-user-journey-clear-state.yaml, signup-flow-clear-state.yaml"
+print_status "  🔐 No clear state flows: app-launch-no-clear-state.yaml, send-money-flow.yaml, wallet-flow.yaml"
 
 # Check if app files exist
 print_step "Checking app files..."
 if [[ -f "apps/android/app-release.apk" ]]; then
     print_success "Android APK found"
+    print_status "Auto app installation will use this file"
 else
     print_warning "Android APK not found at apps/android/app-release.apk"
     print_status "Please add your Android APK to apps/android/app-release.apk"
+    print_status "Required for auto app installation on Android devices"
 fi
 
 if [[ -d "apps/ios/MyApp.app" ]]; then
     print_success "iOS app found"
+    print_status "Auto app installation will use this file"
 else
     print_warning "iOS app not found at apps/ios/MyApp.app"
     print_status "Please add your iOS app to apps/ios/MyApp.app"
+    print_status "Required for auto app installation on iOS simulators"
 fi
 
 # Verify test flows exist
 print_step "Checking test flows..."
-if [[ -f "flows/smoke/app-launch.yaml" ]]; then
-    print_success "Smoke test flow found"
+if [[ -f "flows/feature/app-launch-clear-state.yaml" ]]; then
+    print_success "App launch clear state flow found"
 else
-    print_warning "Smoke test flow not found"
+    print_warning "App launch clear state flow not found"
 fi
 
-if [[ -f "flows/regression/guest-user-journey.yaml" ]]; then
-    print_success "Regression test flow found"
+if [[ -f "flows/feature/guest-user-journey-clear-state.yaml" ]]; then
+    print_success "Guest user journey flow found"
 else
-    print_warning "Regression test flow not found"
+    print_warning "Guest user journey flow not found"
+fi
+
+if [[ -f "flows/feature/signup-flow-clear-state.yaml" ]]; then
+    print_success "Signup flow found"
+else
+    print_warning "Signup flow not found"
 fi
 
 echo ""
 print_success "Setup completed successfully!"
 echo ""
+print_status "🎯 Auto Device Management Ready!"
+print_status "The framework will automatically:"
+print_status "  • Detect and start devices when needed"
+print_status "  • Install apps automatically"
+print_status "  • Handle platform selection"
+print_status "  • Manage device lifecycle"
+echo ""
 print_status "Next steps:"
-print_status "1. Add your app files to the apps/ directory"
-print_status "2. Start a device: ./run-tests.sh --start-device android"
-print_status "3. Run tests: ./run-tests.sh -t smoke"
+print_status "1. Add your app files to the apps/ directory (if not already done)"
+print_status "2. Run tests with auto device management:"
+print_status "   ./run-tests.sh -p android -t \"guest,clear-state\""
+print_status "   ./run-tests.sh -p ios -t \"guest,clear-state\""
+print_status "   ./run-tests.sh flows/feature/wallet-flow.yaml"
 echo ""
 print_status "Available commands:"
 print_status "  ./run-tests.sh --help                    # Show all options"
 print_status "  ./run-tests.sh --list-devices           # List available devices"
-print_status "  ./run-tests.sh -t smoke                 # Run smoke tests"
-print_status "  ./run-tests.sh -p android -t regression # Run regression on Android"
-print_status "  ./run-tests.sh --analyze                # Run with AI analysis"
+print_status "  ./run-tests.sh -p android -t \"guest,clear-state\"  # Auto device + app + run"
+print_status "  ./run-tests.sh -p ios -t \"signup,clear-state\"     # Auto device + app + run"
+print_status "  ./run-tests.sh flows/feature/wallet-flow.yaml       # Auto platform + device + app + run"
+print_status "  ./run-tests.sh -t regression            # Run regression tests"

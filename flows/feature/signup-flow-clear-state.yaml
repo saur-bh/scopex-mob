@@ -1,0 +1,109 @@
+# Signup Flow with Clear State - Comprehensive User Registration
+# Handles onboarding and signup with clean app state
+
+appId: com.scopex.scopexmobilev2
+name: "Signup Flow with Clear State"
+tags: ["feature", "signup", "onboarding", "authentication", "clear-state", "critical"]
+
+# Environment variables
+env:
+  TEST_START_TIME: "${Date.now()}"
+  PLATFORM: "${maestro.platform}"
+  USER_EMAIL: "teshank.2137@gmail.com"
+  USER_OTP: "000000"
+
+# Flow hooks for setup and cleanup
+onFlowStart:
+  - evalScript: "output.testStartTime = Date.now();"
+  - evalScript: "output.stepCount = 0;"
+
+onFlowComplete:
+  - evalScript: "const duration = Date.now() - output.testStartTime;"
+  - evalScript: "output.stepCount++;"
+  - takeScreenshot: "signup-flow-clear-state-complete"
+
+---
+# Start screen recording
+- startRecording:
+    path: 'signup-flow-clear-state'
+    label: 'Signup Flow with Clear State Recording'
+
+# Step 1: Launch the app with state clearing
+- launchApp:
+    appId: "com.scopex.scopexmobilev2"
+    clearState: true
+    clearKeychain: true
+
+# Step 2: Wait for app to load
+- extendedWaitUntil:
+    visible: "Continue"
+    timeout: 15000
+
+# Step 3: Navigate through onboarding
+# Screen 1: Initial onboarding
+- assertVisible: "Send more.*"
+- assertVisible: "Continue"
+
+# Navigate to next screen
+- tapOn: "Continue"
+
+# Screen 2: Trusted by thousands
+- assertVisible: "Trusted by thousands.*"
+- assertVisible: "Continue"
+
+# Navigate to next screen
+- tapOn: "Continue"
+
+# Screen 3: Designed for love
+- assertVisible: "Designed for love.*"
+- assertVisible: "Get Started"
+
+# Complete onboarding
+- tapOn: "Get Started"
+
+# Step 4: Handle signup flow
+# Verify navigation to signup screen
+- assertVisible: "Sign Up"
+- assertVisible: "Sign up to continue"
+
+# Tap on Sign up
+- tapOn: "Sign up to continue"
+
+# Verify email input screen
+- extendedWaitUntil:
+    visible: "Email"
+    timeout: 10000
+
+# Enter email
+- tapOn: "Email"
+- inputText: "teshank.2137@gmail.com"
+
+# Tap Next
+- tapOn: "Next"
+- tapOn: "Next"
+
+# Handle OTP flow
+- tapOn: "Login with code"
+
+# Enter OTP
+- tapOn:
+    point: "11%,41%"
+- inputText: "000000"
+
+# Complete OTP verification
+- tapOn: "Next"
+- tapOn: "Next"
+
+# Step 5: Verify successful signup
+- extendedWaitUntil:
+    visible: "Send Money"
+    timeout: 15000
+
+# Step 6: Take final screenshot
+- takeScreenshot: "signup-flow-clear-state-complete"
+
+# Step 7: Final verification
+- assertTrue: "maestro.appId === 'com.scopex.scopexmobilev2'"
+
+# Stop recording
+- stopRecording

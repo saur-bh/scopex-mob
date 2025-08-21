@@ -65,7 +65,6 @@ show_usage() {
     echo "  -e, --exclude <tags>         Exclude flows with specific tags"
     echo "  -f, --format <format>        Report format (html, junit)"
     echo "  -o, --output <directory>     Output directory for reports"
-    echo "  --analyze                    Enable AI analysis"
     echo "  --sequential                 Run tests in sequential order"
     echo ""
     echo "Advanced Options:"
@@ -77,19 +76,28 @@ show_usage() {
     echo ""
     echo "Examples:"
     echo "  $0 --start-device android                    # Start Android device"
-    echo "  $0 -p android -t smoke                       # Run smoke tests on Android"
-    echo "  $0 -p ios -t regression --analyze           # Run regression with AI analysis"
+    echo "  $0 -p android -t \"guest,clear-state\"        # Auto device + app install + run tests"
+    echo "  $0 -p ios -t regression                     # Auto device + app install + run tests"
+    echo "  $0 flows/feature/wallet-flow.yaml           # Auto platform selection + device + app + run"
     echo "  $0 --sequential --format junit              # Sequential tests with JUnit report"
     echo "  $0 -v --debug --timeout 300                 # Verbose debug with timeout"
     echo ""
-    echo "Available test categories:"
-    echo "  smoke/        - Quick smoke tests"
-    echo "  regression/   - Comprehensive regression tests"
-    echo "  feature/      - Feature-specific tests"
-    echo "  integration/  - Integration tests"
+    echo "Flow Organization:"
+    echo "  All flows are now in flows/feature/ directory"
+    echo "  Clear state flows: app-launch-clear-state.yaml, guest-user-journey-clear-state.yaml, signup-flow-clear-state.yaml"
+    echo "  No clear state flows: app-launch-no-clear-state.yaml, send-money-flow.yaml, wallet-flow.yaml"
+    echo ""
+    echo "Auto Device Management:"
+    echo "  Automatically starts device if not running"
+    echo "  Automatically installs app if not installed"
+    echo "  Platform selection prompt if not specified"
+    echo ""
+    echo "Flow Dependencies:"
+    echo "  Regression tests automatically run signup flow first"
+    echo "  Post-signup flows assume user is already authenticated"
     echo ""
     echo "Available tags:"
-    echo "  smoke, regression, feature, integration, critical, guest, authentication"
+    echo "  feature, clear-state, post-signup, critical, guest, authentication"
 }
 
 # Function to check if command exists
@@ -107,6 +115,237 @@ start_device() {
         return 0
     else
         print_error "Failed to start $platform device"
+        return 1
+    fi
+}
+
+# Function to check if device is available
+check_device_available() {
+    local platform="$1"
+    local device_id=""
+    
+    if [[ "$platform" == "android" ]]; then
+        # Check for Android devices
+        if command_exists adb; then
+            device_id=$(adb devices | grep -v "List of devices" | grep -v "^$" | head -n 1 | cut -f1)
+            if [[ -n "$device_id" ]]; then
+                echo "$device_id"
+                return 0
+            fi
+        fi
+    elif [[ "$platform" == "ios" ]]; then
+        # Check for iOS simulators (macOS only)
+        if [[ "$OSTYPE" == "darwin"* ]] && command_exists xcrun; then
+            device_id=$(xcrun simctl list devices | grep "Booted" | head -n 1 | cut -d'(' -f2 | cut -d')' -f1)
+            if [[ -n "$device_id" ]]; then
+                echo "$device_id"
+                return 0
+            fi
+        fi
+    fi
+    
+    return 1
+}
+
+# Function to wait for device to be ready
+wait_for_device_ready() {
+    local platform="$1"
+    local device_id="$2"
+    local max_attempts=30
+    local attempt=1
+    
+    print_device "Waiting for $platform device to be ready: $device_id"
+    
+    while [[ $attempt -le $max_attempts ]]; do
+        if [[ "$platform" == "android" ]]; then
+            if adb -s "$device_id" shell getprop sys.boot_completed 2>/dev/null | grep -q "1"; then
+                print_success "$platform device is ready"
+                return 0
+            fi
+        elif [[ "$platform" == "ios" ]]; then
+            if xcrun simctl list devices | grep "$device_id" | grep -q "Booted"; then
+                print_success "$platform device is ready"
+                return 0
+            fi
+        fi
+        
+        print_device "Waiting for device to be ready... (attempt $attempt/$max_attempts)"
+        sleep 2
+        ((attempt++))
+    done
+    
+    print_error "Device did not become ready within timeout"
+    return 1
+}
+
+# Function to ensure device is running
+ensure_device_running() {
+    local platform="$1"
+    local device_id=""
+    
+    print_device "Checking for available $platform device..."
+    
+    # First check if device is already available
+    device_id=$(check_device_available "$platform")
+    if [[ -n "$device_id" ]]; then
+        print_success "Found existing $platform device: $device_id"
+        # Wait for device to be ready
+        if wait_for_device_ready "$platform" "$device_id"; then
+            echo "$device_id"
+            return 0
+        else
+            print_error "Existing device is not ready"
+            return 1
+        fi
+    fi
+    
+    # If no device found, start one
+    print_device "No $platform device found. Starting new device..."
+    if start_device "$platform"; then
+        # Wait for device to fully start
+        sleep 10
+        
+        # Check again for the device
+        device_id=$(check_device_available "$platform")
+        if [[ -n "$device_id" ]]; then
+            print_success "Successfully started $platform device: $device_id"
+            # Wait for device to be ready
+            if wait_for_device_ready "$platform" "$device_id"; then
+                echo "$device_id"
+                return 0
+            else
+                print_error "Started device is not ready"
+                return 1
+            fi
+        else
+            print_error "Failed to detect started $platform device"
+            return 1
+        fi
+    else
+        print_error "Failed to start $platform device"
+        return 1
+    fi
+}
+
+# Function to check if app is installed
+check_app_installed() {
+    local platform="$1"
+    local device_id="$2"
+    local app_id="com.scopex.scopexmobilev2"
+    
+    if [[ "$platform" == "android" ]]; then
+        if adb -s "$device_id" shell pm list packages | grep -q "$app_id"; then
+            return 0
+        fi
+    elif [[ "$platform" == "ios" ]]; then
+        if xcrun simctl listapps "$device_id" | grep -q "$app_id"; then
+            return 0
+        fi
+    fi
+    
+    return 1
+}
+
+# Function to uninstall app
+uninstall_app() {
+    local platform="$1"
+    local device_id="$2"
+    local app_id="com.scopex.scopexmobilev2"
+    
+    print_device "Uninstalling app from $platform device: $device_id"
+    
+    if [[ "$platform" == "android" ]]; then
+        if adb -s "$device_id" shell pm list packages | grep -q "$app_id"; then
+            if adb -s "$device_id" uninstall "$app_id"; then
+                print_success "Android app uninstalled successfully"
+                return 0
+            else
+                print_warning "Failed to uninstall Android app (may not exist)"
+                return 0
+            fi
+        else
+            print_device "Android app not found to uninstall"
+            return 0
+        fi
+    elif [[ "$platform" == "ios" ]]; then
+        if xcrun simctl listapps "$device_id" | grep -q "$app_id"; then
+            if xcrun simctl uninstall "$device_id" "$app_id"; then
+                print_success "iOS app uninstalled successfully"
+                return 0
+            else
+                print_warning "Failed to uninstall iOS app (may not exist)"
+                return 0
+            fi
+        else
+            print_device "iOS app not found to uninstall"
+            return 0
+        fi
+    fi
+    
+    return 0
+}
+
+# Function to install app
+install_app() {
+    local platform="$1"
+    local device_id="$2"
+    
+    print_device "Installing app on $platform device: $device_id"
+    
+    if [[ "$platform" == "android" ]]; then
+        local apk_path="apps/android/app-release.apk"
+        if [[ -f "$apk_path" ]]; then
+            # First uninstall if exists
+            uninstall_app "$platform" "$device_id"
+            
+            # Then install fresh
+            if adb -s "$device_id" install "$apk_path"; then
+                print_success "Android app installed successfully"
+                return 0
+            else
+                print_error "Failed to install Android app"
+                return 1
+            fi
+        else
+            print_error "Android APK not found at: $apk_path"
+            return 1
+        fi
+    elif [[ "$platform" == "ios" ]]; then
+        local app_path="apps/ios/MyApp.app"
+        if [[ -d "$app_path" ]]; then
+            # First uninstall if exists
+            uninstall_app "$platform" "$device_id"
+            
+            # Then install fresh
+            if xcrun simctl install "$device_id" "$app_path"; then
+                print_success "iOS app installed successfully"
+                return 0
+            else
+                print_error "Failed to install iOS app"
+                return 1
+            fi
+        else
+            print_error "iOS app not found at: $app_path"
+            return 1
+        fi
+    fi
+    
+    return 1
+}
+
+# Function to ensure app is installed
+ensure_app_installed() {
+    local platform="$1"
+    local device_id="$2"
+    
+    print_device "Ensuring fresh app installation on $platform device..."
+    
+    # Always do fresh install (uninstall + install)
+    if install_app "$platform" "$device_id"; then
+        print_success "Fresh app installation completed successfully"
+        return 0
+    else
+        print_error "Failed to install app"
         return 1
     fi
 }
@@ -168,10 +407,7 @@ create_reports_structure() {
         return 1
     fi
     
-    if ! mkdir -p "$base_dir/ai-analysis"; then
-        print_error "Failed to create ai-analysis directory"
-        return 1
-    fi
+
     
     if ! mkdir -p "$base_dir/performance"; then
         print_error "Failed to create performance directory"
@@ -184,7 +420,7 @@ create_reports_structure() {
     print_status "  🎥 $base_dir/recordings"
     print_status "  📝 $base_dir/logs"
     print_status "  🔍 $base_dir/step-logs"
-    print_status "  🤖 $base_dir/ai-analysis"
+
     print_status "  ⚡ $base_dir/performance"
 }
 
@@ -195,7 +431,7 @@ organize_test_outputs() {
     # Ensure directories exist
     mkdir -p "$output_dir/screenshots"
     mkdir -p "$output_dir/recordings"
-    mkdir -p "$output_dir/ai-analysis"
+
     mkdir -p "$output_dir/performance"
     
     # Move screenshots from root directory and output directory
@@ -214,13 +450,7 @@ organize_test_outputs() {
         fi
     done
     
-    # Move AI analysis files from root directory and output directory
-    for file in *insights*.html "$output_dir"/*insights*.html; do
-        if [[ -f "$file" ]]; then
-            mv "$file" "$output_dir/ai-analysis/"
-            print_success "AI analysis moved: $(basename "$file")"
-        fi
-    done
+
     
     # Move performance logs from root directory and output directory
     for file in *performance*.json "$output_dir"/*performance*.json; do
@@ -229,6 +459,65 @@ organize_test_outputs() {
             print_success "Performance log moved: $(basename "$file")"
         fi
     done
+}
+
+# Function to run signup flow first for regression tests
+run_signup_first() {
+    local platform="$1"
+    local device="$2"
+    local output_dir="$3"
+    local format="$4"
+    local verbose="$5"
+    local timeout="$6"
+    local retry="$7"
+    
+    print_test "Running signup flow first to ensure user authentication..."
+    
+    # Build maestro command for signup flow
+    local signup_cmd="maestro test"
+    
+    # Add device if specified
+    if [[ -n "$device" ]]; then
+        signup_cmd="$signup_cmd --device '$device'"
+    fi
+    
+    # Add output directory and format
+    signup_cmd="$signup_cmd --output '$output_dir/signup-report.$format' --format $format"
+    
+    # Add signup flow specific tags
+    signup_cmd="$signup_cmd --include-tags 'signup,clear-state'"
+    
+
+    
+    # Add verbose if enabled
+    if [[ "$verbose" == true ]]; then
+        signup_cmd="$signup_cmd --verbose"
+    fi
+    
+    # Add timeout if specified
+    if [[ -n "$timeout" ]]; then
+        signup_cmd="$signup_cmd --timeout $timeout"
+    fi
+    
+    # Add retry if specified
+    if [[ -n "$retry" ]]; then
+        signup_cmd="$signup_cmd --retry $retry"
+    fi
+    
+    # Add flows directory
+    signup_cmd="$signup_cmd flows/feature/"
+    
+    print_step "Executing signup flow: $signup_cmd"
+    
+    # Execute signup flow
+    if eval "$signup_cmd"; then
+        print_success "Signup flow completed successfully"
+    else
+        print_error "Signup flow failed - continuing with other tests"
+    fi
+    
+    # Wait a moment for app state to stabilize
+    sleep 2
 }
 
 # Function to enhance HTML report with media links
@@ -342,7 +631,7 @@ EOF
     print_success "Created media links file: $media_links_file"
 }
 
-# Function to run tests with advanced features
+# Function to run tests with advanced features and flow dependencies
 run_tests() {
     local platform="$1"
     local device="$2"
@@ -350,13 +639,12 @@ run_tests() {
     local tags="$4"
     local exclude_tags="$5"
     local format="$6"
-    local analyze="$7"
-    local sequential="$8"
-    local verbose="$9"
-    local timeout="${10}"
-    local retry="${11}"
-    local parallel="${12}"
-    local flow_files=("${@:13}")
+    local sequential="$7"
+    local verbose="$8"
+    local timeout="$9"
+    local retry="${10}"
+    local parallel="${11}"
+    local flow_files=("${@:12}")
     
     # Set output directory
     if [[ -z "$output_dir" ]]; then
@@ -365,6 +653,12 @@ run_tests() {
     
     # Create reports directory structure
     create_reports_structure "$output_dir"
+    
+    # Handle flow dependencies for regression tests
+    if [[ "$tags" == *"regression"* ]]; then
+        print_test "Regression test detected - running signup flow first"
+        run_signup_first "$platform" "$device" "$output_dir" "$format" "$verbose" "$timeout" "$retry"
+    fi
     
     # Build maestro command
     local maestro_cmd="maestro test"
@@ -391,11 +685,7 @@ run_tests() {
         print_test "Excluding flows with tags: $exclude_tags"
     fi
     
-    # Add AI analysis
-    if [[ "$analyze" == true ]]; then
-        maestro_cmd="$maestro_cmd --analyze"
-        print_test "AI analysis enabled"
-    fi
+
     
     # Add sequential execution
     if [[ "$sequential" == true ]]; then
@@ -417,11 +707,12 @@ run_tests() {
     
     # Add flow files
     if [[ ${#flow_files[@]} -eq 0 ]]; then
-        # Run all flows if none specified
-        if [[ -d "flows" ]]; then
-            flow_files=($(find flows -name "*.yaml" | sort))
+        # Run all flows from feature directory if none specified
+        if [[ -d "flows/feature" ]]; then
+            flow_files=($(find flows/feature -name "*.yaml" | sort))
+            print_test "Found $((${#flow_files[@]})) flows in flows/feature/ directory"
         else
-            print_error "No flows directory found"
+            print_error "No flows/feature directory found"
             exit 1
         fi
     fi
@@ -506,16 +797,7 @@ run_tests() {
         print_status "Open media files: open '$media_links_file'"
     fi
     
-    # Show AI analysis location
-    local ai_dir="$output_dir/ai-analysis"
-    if [[ -d "$ai_dir" ]] && [[ "$(ls -A "$ai_dir" 2>/dev/null)" ]]; then
-        print_success "AI Analysis: $ai_dir"
-        for file in "$ai_dir"/*.html; do
-            if [[ -f "$file" ]]; then
-                print_status "AI Report: open '$file'"
-            fi
-        done
-    fi
+
     
     # Show other directories
     local screenshots_dir="$output_dir/screenshots"
@@ -546,7 +828,7 @@ main() {
     local tags=""
     local exclude_tags=""
     local format="html"
-    local analyze=false
+
     local sequential=false
     local verbose=false
     local timeout=""
@@ -591,10 +873,7 @@ main() {
                 format="$2"
                 shift 2
                 ;;
-            --analyze)
-                analyze=true
-                shift
-                ;;
+
             --sequential)
                 sequential=true
                 shift
@@ -696,14 +975,87 @@ main() {
             ;;
     esac
     
-    # List devices if requested
-    if [[ -z "$device" ]]; then
-        list_devices
-        echo ""
+    # Auto device management and app installation
+    if [[ -n "$platform" ]] && [[ "$platform" != "both" ]]; then
+        print_step "Auto device management for $platform platform"
+        
+        # Ensure device is running
+        device=$(ensure_device_running "$platform")
+        if [[ -z "$device" ]]; then
+            print_error "Failed to ensure $platform device is running"
+            exit 1
+        fi
+        
+        # Ensure app is installed
+        if ! ensure_app_installed "$platform" "$device"; then
+            print_error "Failed to ensure app is installed on $platform device"
+            exit 1
+        fi
+        
+        print_success "Device and app ready for testing on $platform"
+    elif [[ "$platform" == "both" ]]; then
+        print_step "Auto device management for both platforms"
+        
+        # Handle both platforms
+        for p in "android" "ios"; do
+            print_device "Setting up $p platform..."
+            
+            # Ensure device is running
+            local device_id=$(ensure_device_running "$p")
+            if [[ -z "$device_id" ]]; then
+                print_error "Failed to ensure $p device is running"
+                continue
+            fi
+            
+            # Ensure app is installed
+            if ! ensure_app_installed "$p" "$device_id"; then
+                print_error "Failed to ensure app is installed on $p device"
+                continue
+            fi
+            
+            print_success "Device and app ready for testing on $p"
+        done
+    else
+        # No platform specified - ask user to choose
+        print_step "No platform specified. Please choose platform:"
+        echo "1. Android"
+        echo "2. iOS"
+        echo "3. Both"
+        read -p "Enter choice (1-3): " choice
+        
+        case "$choice" in
+            1)
+                platform="android"
+                device=$(ensure_device_running "$platform")
+                if [[ -n "$device" ]]; then
+                    ensure_app_installed "$platform" "$device"
+                fi
+                ;;
+            2)
+                platform="ios"
+                device=$(ensure_device_running "$platform")
+                if [[ -n "$device" ]]; then
+                    ensure_app_installed "$platform" "$device"
+                fi
+                ;;
+            3)
+                platform="both"
+                for p in "android" "ios"; do
+                    local device_id=$(ensure_device_running "$p")
+                    if [[ -n "$device_id" ]]; then
+                        ensure_app_installed "$p" "$device_id"
+                    fi
+                done
+                ;;
+            *)
+                print_error "Invalid choice"
+                exit 1
+                ;;
+        esac
     fi
     
     # Run tests
-    run_tests "$platform" "$device" "$output_dir" "$tags" "$exclude_tags" "$format" "$analyze" "$sequential" "$verbose" "$timeout" "$retry" "$parallel" "${flow_files[@]}"
+    run_tests "$platform" "$device" "$output_dir" "$tags" "$exclude_tags" "$format" "$sequential" "$verbose" "$timeout" "$retry" "$parallel" "${flow_files[@]}"
 }
 
 # Run main function

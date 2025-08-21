@@ -1,238 +1,222 @@
-# ScopeX Mobile Automation Framework v2.0
+# ScopeX Mobile Automation Framework
 
-**Comprehensive mobile automation framework using Maestro with advanced features, detailed step execution, and scalable test management.**
+A comprehensive mobile automation framework using Maestro for testing the ScopeX mobile app on both Android and iOS platforms. This framework incorporates advanced Maestro features, detailed step execution, and scalable test management.
 
-## 🚀 Framework Overview
+## 🎯 Project Overview
 
-This framework incorporates all advanced Maestro features including:
-- ✅ **Device Management** - Start and manage Android/iOS devices
-- ✅ **Advanced Test Execution** - Tag-based, sequential, parallel execution
-- ✅ **Comprehensive Reporting** - HTML, JUnit, AI analysis reports
-- ✅ **JavaScript Integration** - Dynamic test logic and API calls
-- ✅ **Flow Hooks** - Setup and cleanup automation
-- ✅ **Conditional Execution** - Platform-specific test logic
-- ✅ **Advanced Selectors** - Reliable element interaction
-- ✅ **Performance Monitoring** - Test execution metrics
+This framework is designed to test the ScopeX mobile application with a focus on:
+- **Guest User Journey**: Testing onboarding and basic app functionality
+- **Signup Flow**: Complete user registration and authentication
+- **Post-Signup Features**: Testing authenticated user functionality
+- **Cross-Platform Testing**: Support for both Android and iOS
 
-## 📁 Framework Structure
+## 📁 Project Structure
 
 ```
 mobile-automation-scopex/
-├── maestro.yaml                    # Comprehensive configuration
-├── run-tests.sh                    # Advanced test runner v2.0
-├── setup.sh                        # Environment setup
-├── flows/                          # Organized test categories
-│   ├── smoke/                      # Quick smoke tests
-│   │   └── app-launch.yaml         # Enhanced app launch test
-│   ├── regression/                 # Comprehensive regression tests
-│   │   └── guest-user-journey.yaml # Full user journey test
-│   ├── feature/                    # Feature-specific tests
-│   │   └── user-authentication.yaml # Authentication flow test
-│   └── integration/                # Integration tests
-│       └── main-navigation.yaml    # Navigation integration test
+├── maestro.yaml                    # Main Maestro configuration
+├── run-tests.sh                    # Advanced test runner script
+├── setup.sh                        # Environment setup script
+├── flows/                          # All test flows organized in feature directory
+│   └── feature/                    # All flows are now in feature directory
+│       ├── app-launch-clear-state.yaml          # App launch with clear state
+│       ├── app-launch-no-clear-state.yaml       # App launch without clear state
+│       ├── guest-user-journey-clear-state.yaml  # Guest user flow with clear state
+│       ├── signup-flow-clear-state.yaml         # Signup flow with clear state
+│       ├── send-money-flow.yaml                 # Post-signup flow (no clear state)
+│       ├── wallet-flow.yaml                     # Post-signup flow (no clear state)
+│       └── template-flow.yaml                   # Template for new flows
 ├── apps/                           # App binaries
 │   ├── android/app-release.apk
 │   └── ios/MyApp.app
-└── reports/                        # Comprehensive test results
-    ├── screenshots/                # Test screenshots
-    ├── recordings/                 # Video recordings
-    ├── logs/                       # Maestro logs
-    ├── step-logs/                  # Detailed step execution
-    ├── ai-analysis/                # AI analysis reports
-    └── performance/                # Performance metrics
+└── reports/                        # Test results and outputs
 ```
 
-## 🎯 Quick Start
+## 🚀 Framework Features
+
+### Auto Device Management
+- **Automatic Device Detection**: Finds available devices/emulators
+- **Automatic Device Startup**: Starts devices if none are running
+- **Automatic App Installation**: Installs app if not already installed
+- **Interactive Platform Selection**: Prompts for platform choice if not specified
+- **Cross-Platform Support**: Works seamlessly on Android and iOS
+
+### Flow Organization
+- **All flows in `flows/feature/` directory**: Simplified organization
+- **Clear State Flows**: For guest user and signup scenarios
+- **No Clear State Flows**: For post-signup authenticated user scenarios
+- **Automatic Dependencies**: Regression tests run signup first
+
+### Advanced Features
+- Device management (Android/iOS)
+- Tag-based test execution
+- Comprehensive reporting (HTML, JUnit)
+- JavaScript integration for dynamic logic
+- Flow hooks for setup/cleanup
+- Conditional execution for platform-specific tests
+- Advanced selectors for reliable element interaction
+
+## 📝 Flow Categories
+
+### Clear State Flows (Fresh App State)
+These flows clear app state and are used for guest users and signup:
+
+1. **`app-launch-clear-state.yaml`**
+   - Tags: `feature`, `launch`, `clear-state`, `guest`, `signup`, `critical`
+   - Purpose: Launch app with clean state for authentication flows
+
+2. **`guest-user-journey-clear-state.yaml`**
+   - Tags: `feature`, `guest`, `onboarding`, `clear-state`, `critical`
+   - Purpose: Test complete guest user onboarding journey
+
+3. **`signup-flow-clear-state.yaml`**
+   - Tags: `feature`, `signup`, `onboarding`, `authentication`, `clear-state`, `critical`
+   - Purpose: Complete user registration and authentication
+
+### No Clear State Flows (Authenticated User)
+These flows assume user is already signed up:
+
+1. **`app-launch-no-clear-state.yaml`**
+   - Tags: `feature`, `launch`, `no-clear-state`, `authenticated`, `post-signup`, `critical`
+   - Purpose: Launch app without clearing state for authenticated users
+
+2. **`send-money-flow.yaml`**
+   - Tags: `feature`, `send-money`, `transfer`, `authenticated`, `post-signup`, `critical`
+   - Purpose: Test money transfer functionality
+
+3. **`wallet-flow.yaml`**
+   - Tags: `feature`, `wallet`, `balance`, `authenticated`, `post-signup`, `critical`
+   - Purpose: Test wallet and balance functionality
+
+## 🚀 Quick Start
 
 ### 1. Setup Environment
 ```bash
 ./setup.sh
 ```
 
-### 2. Device Management
+### 2. Run Tests with Auto Device Management
 ```bash
-# Start Android device
+# Android - Auto device + app install + run tests
+./run-tests.sh -p android -t "guest,clear-state"
+
+# iOS - Auto device + app install + run tests
+./run-tests.sh -p ios -t "guest,clear-state"
+
+# Specific flow with auto platform selection
+./run-tests.sh flows/feature/wallet-flow.yaml
+```
+
+### 3. Manual Device Management (Optional)
+```bash
+# Start Android device manually
 ./run-tests.sh --start-device android
 
-# Start iOS device
+# Start iOS device manually
 ./run-tests.sh --start-device ios
 
 # List available devices
 ./run-tests.sh --list-devices
 ```
 
-### 3. Run Tests
+#### Guest User Journey (Clear State)
 ```bash
-# Run smoke tests
-./run-tests.sh -t smoke
-
-# Run regression tests with AI analysis
-./run-tests.sh -t regression --analyze
-
-# Run specific platform
-./run-tests.sh -p android -t smoke
-
-# Run with JUnit reporting
-./run-tests.sh --format junit -t critical
-
-# Run with verbose debugging
-./run-tests.sh -v --debug -t smoke
+./run-tests.sh -t "guest,clear-state"
 ```
 
-## 🔧 Advanced Features
-
-### Device Management
+#### Signup Flow (Clear State)
 ```bash
-# Start devices
-./run-tests.sh --start-device android
-./run-tests.sh --start-device ios
-
-# Use specific device
-./run-tests.sh --device "emulator-5554"
+./run-tests.sh -t "signup,clear-state"
 ```
 
-### Test Execution Options
+#### Post-Signup Features (No Clear State)
 ```bash
-# Tag-based execution
-./run-tests.sh -t smoke                    # Run smoke tests
-./run-tests.sh -t regression -e slow       # Run regression excluding slow tests
-./run-tests.sh -t "smoke,critical"         # Run multiple tags
-
-# Platform-specific
-./run-tests.sh -p android                  # Android only
-./run-tests.sh -p ios                      # iOS only
-./run-tests.sh -p both                     # Both platforms
-
-# Advanced execution
-./run-tests.sh --sequential                # Sequential execution
-./run-tests.sh --timeout 300               # Set timeout
-./run-tests.sh --retry 3                   # Retry failed tests
-
-# Advanced options
-./run-tests.sh --analyze                   # Enable AI analysis
-./run-tests.sh --sequential                # Sequential execution
-./run-tests.sh --timeout 300               # Set timeout
-./run-tests.sh --retry 3                   # Retry failed tests
-./run-tests.sh -v --debug                  # Verbose debug mode
+./run-tests.sh -t "post-signup"
 ```
 
-### Report Formats
+#### Regression Tests (Automatic Signup First)
 ```bash
-# HTML reports (default)
-./run-tests.sh --format html
-
-# JUnit reports for CI/CD
-./run-tests.sh --format junit
+./run-tests.sh -t regression
 ```
 
-## 📊 Test Categories & Tag Organization
-
-### Smoke Tests
-- **Purpose**: Quick validation of basic functionality
-- **Tags**: `smoke`, `critical`
-- **Examples**: App launch, basic navigation
-- **Current Tests**: 
-  - `flows/smoke/app-launch.yaml` (smoke, launch, critical)
-  - `flows/feature/guest-user-journey.yaml` (smoke, regression, guest, onboarding, critical)
-
-### Regression Tests
-- **Purpose**: Comprehensive testing of existing features
-- **Tags**: `regression`, `critical`
-- **Examples**: Complete user journeys, end-to-end flows
-- **Current Tests**:
-  - `flows/feature/guest-user-journey.yaml` (smoke, regression, guest, onboarding, critical)
-
-### Feature Tests (`flows/feature/`)
-- **Purpose**: Testing specific features
-- **Tags**: `feature`, `template`, `example`
-- **Examples**: User authentication, payment flows
-- **Current Tests**:
-  - `flows/feature/guest-user-journey.yaml` (smoke, regression, guest, onboarding, critical)
-  - `flows/feature/template-flow.yaml` (template, example)
-
-### Integration Tests (`flows/integration/`)
-- **Purpose**: Testing component integration
-- **Tags**: `integration`, `navigation`, `critical`
-- **Examples**: Cross-feature navigation, API integration
-- **Current Tests**:
-  - `flows/integration/main-navigation.yaml` (integration, navigation, critical)
-
-## 🎯 Advanced Test Features
-
-### Flow Hooks
-```yaml
-onFlowStart:
-  - evalScript: "console.log('Starting test...');"
-  - evalScript: "output.startTime = Date.now();"
-
-onFlowComplete:
-  - evalScript: "console.log('Test completed');"
-  - takeScreenshot: "test-complete"
+#### All Feature Tests
+```bash
+./run-tests.sh -t feature
 ```
 
-### JavaScript Integration
-```yaml
-# Dynamic logging
-- evalScript: "console.log('Step executed');"
+## 🎯 Test Execution Examples
 
-# Element text extraction
-- copyTextFrom: "Button"
-- evalScript: "console.log('Button text:', output.text);"
+### Auto Device Management
+```bash
+# Platform-specific auto setup
+./run-tests.sh -p android -t "guest,clear-state"         # Auto device + app + run
+./run-tests.sh -p ios -t "signup,clear-state"            # Auto device + app + run
+./run-tests.sh -p both -t regression                     # Auto setup for both platforms
 
-# HTTP requests
-- evalScript: |
-    const response = fetch('https://api.scopex.com/data');
-    const data = response.json();
-    output.apiData = data;
+# Flow-specific auto setup
+./run-tests.sh flows/feature/wallet-flow.yaml            # Auto platform + device + app + run
+./run-tests.sh -p android flows/feature/send-money-flow.yaml  # Auto device + app + run
+
+# Interactive platform selection
+./run-tests.sh -t "guest,clear-state"                    # Prompts for platform choice
 ```
 
-### Advanced Selectors
-```yaml
-# Multiple selector types
-- tapOn:
-    id: "button_id"
-    text: "Button Text"
-    index: 0
-
-# Scroll until visible
-- scrollUntilVisible:
-    element: "Target Element"
-    direction: DOWN
-    timeout: 5000
+### Manual Device Management
+```bash
+./run-tests.sh --start-device android                     # Start Android device
+./run-tests.sh --start-device ios                         # Start iOS device
+./run-tests.sh --list-devices                             # List available devices
 ```
 
-### Conditional Execution
-```yaml
-# Platform-specific flows
-- runFlow:
-    when:
-      platform: android
-    file: "flows/android-specific.yaml"
+### Test Execution
+```bash
+./run-tests.sh -t "guest,clear-state"                    # Guest user tests
+./run-tests.sh -t "signup,clear-state"                   # Signup tests
+./run-tests.sh -t "post-signup"                          # Post-signup tests
+./run-tests.sh -t regression                             # Regression tests
+./run-tests.sh -p android -t critical                    # Critical tests on Android
+./run-tests.sh --format junit -t feature                 # JUnit reports
+./run-tests.sh -v --debug --timeout 300                  # Verbose debug
 ```
 
-## 📈 Reporting & Analysis
+### Advanced Features
+```bash
+./run-tests.sh --sequential --retry 3                    # Sequential with retries
+./run-tests.sh --device "emulator-5554"                  # Specific device
+./run-tests.sh -t "clear-state,post-signup"              # Multiple tag combinations
+```
+
+## 🔄 Flow Dependencies
+
+### Automatic Signup for Regression
+When running regression tests, the framework automatically:
+1. Runs signup flow first to ensure user authentication
+2. Then runs all other regression tests
+3. Post-signup flows assume user is already signed up
+
+### Manual Flow Execution
+You can also run specific flows in order:
+```bash
+# Run signup first, then other flows
+./run-tests.sh flows/feature/signup-flow-clear-state.yaml
+./run-tests.sh flows/feature/send-money-flow.yaml
+./run-tests.sh flows/feature/wallet-flow.yaml
+```
+
+## 📊 Reporting
 
 ### HTML Reports
-- **Interactive test results** with step-by-step timeline
-- **Performance metrics** and execution statistics
-- **Error details** with context and debugging info
-
-### Media Files & Recordings
-- **Screen Recordings**: MP4 videos of test execution
-- **Screenshots**: PNG images at key test points
-- **Media Links Page**: Dedicated HTML page with all media files
-- **File Organization**: All media organized in reports subdirectories
-
-### AI Analysis
-- **Automated issue detection** in UI/UX
-- **Internationalization checks** for localization
-- **Performance insights** and optimization suggestions
-- **Accessibility recommendations**
+- Interactive test results with step-by-step timeline
+- Embedded screenshots and video recordings
+- Performance metrics and execution statistics
+- Error details with context and debugging info
 
 ### JUnit Reports
-- **CI/CD integration** ready
-- **Test result aggregation** for trend analysis
-- **Failure analysis** with detailed error reporting
+- CI/CD integration ready
+- Test result aggregation for trend analysis
+- Failure analysis with detailed error reporting
+
+
 
 ## 🔍 Troubleshooting
 
@@ -240,44 +224,49 @@ onFlowComplete:
 1. **Element not found**: Use `scrollUntilVisible` or `extendedWaitUntil`
 2. **Test flakiness**: Add proper waits and retry logic
 3. **Platform differences**: Use conditional execution
-4. **Device issues**: Check device connectivity and restart if needed
-5. **YAML parsing errors**: Ensure proper quoting in evalScript commands
-6. **Missing flow files**: Check that referenced flows exist
+4. **Device issues**: Auto device management handles this automatically
+5. **App not installed**: Auto app installation handles this automatically
 
 ### Debug Commands
 ```bash
-# Verbose output with debugging
-./run-tests.sh -v --debug
+./run-tests.sh -v --debug                  # Verbose output
+./run-tests.sh --list-devices              # Check devices
+./run-tests.sh --start-device android      # Start fresh device
+./run-tests.sh --timeout 300 --retry 3     # Timeout and retries
+```
 
+### Auto Device Management Issues
+```bash
 # Check device status
 ./run-tests.sh --list-devices
 
-# Start fresh device
+# Force device restart
 ./run-tests.sh --start-device android
+./run-tests.sh --start-device ios
 
-# Run with timeout and retries
-./run-tests.sh --timeout 300 --retry 3
-
-# Check test execution logs
-cat reports/test-run-*/step-logs/test-execution.log
+# Check app installation
+./run-tests.sh -p android -t "guest,clear-state"  # Will auto-install if needed
 ```
 
-### Setup Issues
-```bash
-# Run setup to check environment
-./setup.sh
+## 🎯 Quality Assurance
 
-# Verify Maestro installation
-maestro --version
+### Code Review Checklist
+- [ ] Proper test organization in feature directory
+- [ ] Clear state vs no clear state flow separation
+- [ ] Comprehensive logging and error handling
+- [ ] Platform-specific considerations
+- [ ] Appropriate use of advanced selectors
+- [ ] Proper timeout and retry logic
+- [ ] Clear test documentation and purpose
+- [ ] Screenshots at key verification points
 
-# Check Android devices
-adb devices
+### Performance Standards
+- Guest user tests should complete within 3-5 minutes
+- Signup tests should complete within 5-8 minutes
+- Post-signup tests should complete within 2-4 minutes
+- Regression tests should complete within 15-20 minutes
 
-# Check iOS simulators (macOS only)
-xcrun simctl list devices
-```
-
-## 🚀 CI/CD Integration
+## 🔄 CI/CD Integration
 
 ### GitHub Actions Example
 ```yaml
@@ -288,50 +277,48 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Run Smoke Tests
-        run: |
-          ./run-tests.sh -p android -t smoke --format junit
-          ./run-tests.sh -p ios -t smoke --format junit
+      - name: Run Guest User Tests
+        run: ./run-tests.sh -p android -t "guest,clear-state" --format junit
+      - name: Run Signup Tests
+        run: ./run-tests.sh -p android -t "signup,clear-state" --format junit
+      - name: Run Post-Signup Tests
+        run: ./run-tests.sh -p android -t "post-signup" --format junit
       - name: Run Regression Tests
-        run: |
-          ./run-tests.sh -p android -t regression --format junit
+        run: ./run-tests.sh -p android -t regression --format junit
 ```
 
 ## 📚 Documentation
 
-### Framework Reference
-- **`.cursor`** - Comprehensive Maestro reference guide
-- **`maestro.yaml`** - Configuration examples
-- **Test flows** - Advanced feature demonstrations
+### Required Files
+- `README.md` - Complete framework guide
+- `.cursor` - Comprehensive Maestro reference
+- `maestro.yaml` - Configuration examples
+- Test flows - Advanced feature demonstrations
 
-### Maestro Documentation
-- **Main Docs**: https://docs.maestro.dev/
-- **Commands**: https://docs.maestro.dev/api-reference/commands
-- **Advanced Features**: https://docs.maestro.dev/advanced/
+### Documentation Standards
+- Clear and concise descriptions
+- Code examples for all features
+- Troubleshooting guides
+- Best practices and guidelines
+- Links to official documentation
+
+## 🆘 Support & Resources
+
+### Framework Documentation
+- `.cursor` file - Comprehensive Maestro reference guide
+- `maestro.yaml` - Configuration examples and best practices
+- Test flows - Advanced feature demonstrations
+
+### External Resources
+- **Maestro Documentation**: https://docs.maestro.dev/
+- **MCP Integration**: https://docs.maestro.dev/getting-started/maestro-mcp
 - **Best Practices**: https://maestro.dev/blog/maestro-best-practices-structuring-your-test-suite
-
-## 🎯 Best Practices
-
-1. **Organize tests by category** (smoke, regression, feature, integration)
-2. **Use descriptive tags** for test selection and filtering
-3. **Implement proper error handling** with retry logic
-4. **Add comprehensive logging** for debugging and monitoring
-5. **Use conditional execution** for platform-specific tests
-6. **Implement flow hooks** for setup and cleanup automation
-7. **Use advanced selectors** for reliable element interaction
-8. **Enable AI analysis** for automated insights and recommendations
-9. **Generate multiple report formats** for different stakeholders
-10. **Monitor performance** and optimize test execution
-
-## 🆘 Support
-
-- **Framework Issues**: Check the `.cursor` file for comprehensive reference
-- **Maestro Community**: https://github.com/mobile-dev-inc/maestro
-- **Documentation**: https://docs.maestro.dev/
-- **Slack**: Join the Maestro community for support
+- **Community**: https://github.com/mobile-dev-inc/maestro
 
 ---
 
 **Framework Version**: 2.0  
 **Last Updated**: August 2025  
 **Status**: ✅ Production Ready with Advanced Features
+
+*This framework provides a comprehensive solution for testing the ScopeX mobile application with proper flow organization, state management, and automated dependencies.*

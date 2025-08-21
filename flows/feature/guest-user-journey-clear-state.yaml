@@ -1,0 +1,147 @@
+# Guest User Journey with Clear State - Enhanced with Advanced Maestro Features
+# Comprehensive regression test for guest user flow with clean app state
+
+appId: com.scopex.scopexmobilev2
+name: "Guest User Journey with Clear State"
+tags: ["feature", "guest", "onboarding", "clear-state", "critical"]
+
+# Environment variables
+env:
+  TEST_START_TIME: "${Date.now()}"
+  PLATFORM: "${maestro.platform}"
+  MAX_RETRIES: "3"
+
+# Flow hooks for setup and cleanup
+onFlowStart:
+  - evalScript: "output.testStartTime = Date.now();"
+  - evalScript: "output.stepCount = 0;"
+
+onFlowComplete:
+  - evalScript: "const duration = Date.now() - output.testStartTime;"
+  - evalScript: "output.stepCount++;"
+  - takeScreenshot: "guest-user-journey-clear-state-complete"
+
+---
+# Start screen recording
+- startRecording:
+    path: 'guest-user-journey-clear-state'
+    label: 'Guest User Journey with Clear State Recording'
+
+# Step 1: Launch the app with state clearing
+- launchApp:
+    appId: "com.scopex.scopexmobilev2"
+    clearState: true
+    clearKeychain: true
+
+# Step 2: Wait for app to load and verify initial screen
+- extendedWaitUntil:
+    visible: "Continue"
+    timeout: 15000
+
+# Step 3: Execute onboarding flow
+# Screen 1: Initial onboarding
+- assertVisible: "25 Paisa better than google rates"
+- assertVisible: "€10 Reward on first transaction"
+- assertVisible: "Continue"
+
+# Navigate to next screen
+- tapOn: "Continue"
+
+# Screen 2: Trusted by thousands
+- extendedWaitUntil:
+    visible: "Trusted by thousands"
+    timeout: 10000
+- assertVisible: "Built by one of us"
+- assertVisible: "25 Paisa better than Google rates"
+- assertVisible: "No hidden fees or surprises"
+- assertVisible: "Instant bank transfers to India"
+- assertVisible: "Continue"
+
+# Navigate to next screen
+- tapOn: "Continue"
+
+# Screen 3: Designed for love
+- extendedWaitUntil:
+    visible: "Designed for love"
+    timeout: 10000
+- assertVisible: "Disguised as money"
+- assertVisible: "0% Fees on all transactions forever"
+- assertVisible: "25 Paisa better than google rates"
+- assertVisible: "€10 Reward on first transaction"
+- assertVisible: "Get Started"
+
+# Complete onboarding
+- tapOn: "Get Started"
+
+# Step 4: Verify navigation to home screen
+- extendedWaitUntil:
+    visible: "Sign up and get €10"
+    timeout: 10000
+- assertVisible: "Save extra when sending home"
+- assertVisible: "Sign Up"
+
+# Step 5: Verify welcome screen
+- extendedWaitUntil:
+    visible: "Welcome to ScopeX"
+    timeout: 10000
+
+# Step 6: Test tab navigation with enhanced selectors
+# Home tab navigation
+- tapOn:
+    id: "home_tab"
+    text: "Home"
+    index: 0
+
+# Compare tab navigation
+- tapOn:
+    text: "Compare"
+    index: 0
+
+# Settings tab navigation
+- tapOn:
+    text: "Settings"
+    index: 0
+
+# Step 7: Verify main navigation elements with scroll support
+# Use scrollUntilVisible for elements that might be off-screen
+- scrollUntilVisible:
+    element: "Help"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Help"
+
+- scrollUntilVisible:
+    element: "Settings"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Settings"
+
+- scrollUntilVisible:
+    element: "Transfers"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Transfers"
+
+- scrollUntilVisible:
+    element: "Wallet"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Wallet"
+
+- scrollUntilVisible:
+    element: "Home"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Home"
+
+# Step 8: Test platform-specific features
+- evalScript: "output.platform = maestro.platform;"
+
+# Step 9: Take final screenshot
+- takeScreenshot: "guest-user-journey-clear-state-complete"
+
+# Step 10: Verify test completion and log results
+- assertTrue: "maestro.appId === 'com.scopex.scopexmobilev2'"
+
+# Stop recording
+- stopRecording

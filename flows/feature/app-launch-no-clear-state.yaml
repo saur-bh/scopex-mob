@@ -1,0 +1,56 @@
+# App Launch without Clear State - For Post-Signup Flows
+# Launches app without clearing state for authenticated user flows
+
+appId: com.scopex.scopexmobilev2
+name: "App Launch without Clear State"
+tags: ["feature", "launch", "no-clear-state", "authenticated", "post-signup", "critical"]
+
+# Environment variables
+env:
+  TEST_START_TIME: "${Date.now()}"
+  PLATFORM: "${maestro.platform}"
+
+# Flow hooks for setup and cleanup
+onFlowStart:
+  - evalScript: "output.testStartTime = Date.now();"
+
+onFlowComplete:
+  - evalScript: "const duration = Date.now() - output.testStartTime;"
+  - takeScreenshot: "app-launch-no-clear-state-complete"
+
+---
+# Start screen recording
+- startRecording:
+    path: 'app-launch-no-clear-state'
+    label: 'App Launch without Clear State Recording'
+
+# Step 1: Launch the app without state clearing
+- launchApp:
+    appId: "com.scopex.scopexmobilev2"
+    clearState: false
+    clearKeychain: false
+
+# Step 2: Wait for app to load and check for authenticated state
+- extendedWaitUntil:
+    visible: "Send Money"
+    timeout: 15000
+
+# Step 3: Verify authenticated user elements
+- assertVisible: "Send Money"
+- assertVisible: "Wallet"
+
+# Step 4: Take initial screenshot
+- takeScreenshot: "app-launched-no-clear-state"
+
+# Step 5: Verify app is ready for interaction
+- assertTrue: "maestro.appId === 'com.scopex.scopexmobilev2'"
+
+# Step 6: Extract and log element text for verification
+- copyTextFrom: "Send Money"
+
+# Step 7: Verify app state
+- assertVisible: "Send Money"
+- assertNotVisible: "Sign Up"
+
+# Stop recording
+- stopRecording

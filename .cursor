@@ -48,16 +48,15 @@ maestro device list
 ### Test Execution Commands
 ```bash
 # Basic test execution
-maestro test flows/smoke/app-launch.yaml
+maestro test flows/feature/app-launch-clear-state.yaml
 
 # With format and output
-maestro test --format html --output reports/test-run flows/smoke/
+maestro test --format html --output reports/test-run flows/feature/
 
 # With tags
-maestro test --include-tags smoke --exclude-tags slow flows/
+maestro test --include-tags clear-state --exclude-tags slow flows/
 
-# With AI analysis
-maestro test --analyze flows/regression/
+
 
 # Sequential execution
 maestro test --sequential flows/
@@ -75,14 +74,12 @@ mobile-automation-scopex/
 ├── run-tests.sh                    # Advanced test runner
 ├── setup.sh                        # Environment setup
 ├── flows/                          # Test flows organized by category
-│   ├── smoke/                      # Quick smoke tests
-│   │   └── app-launch.yaml
-│   ├── regression/                 # Comprehensive regression tests
-│   │   └── guest-user-journey.yaml
-│   ├── feature/                    # Feature-specific tests
-│   │   └── user-authentication.yaml
-│   └── integration/                # Integration tests
-│       └── main-navigation.yaml
+│   └── feature/                    # All test flows organized here
+│       ├── app-launch-clear-state.yaml
+│       ├── guest-user-journey-clear-state.yaml
+│       ├── signup-flow-clear-state.yaml
+│       ├── send-money-flow.yaml
+│       └── wallet-flow.yaml
 ├── apps/                           # App binaries
 │   ├── android/
 │   │   └── app-release.apk
@@ -93,7 +90,7 @@ mobile-automation-scopex/
     ├── recordings/
     ├── logs/
     ├── step-logs/
-    ├── ai-analysis/
+
     └── performance/
 ```
 
@@ -193,10 +190,9 @@ testOutputDir: "reports"
 
 # Organized flows
 flows:
-  - "flows/smoke/*.yaml"
-  - "flows/regression/*.yaml"
   - "flows/feature/*.yaml"
-  - "flows/integration/*.yaml"
+
+
 
 # Execution order
 executionOrder:
@@ -229,7 +225,7 @@ timeouts:
 ## 🏷️ Tag Strategy
 
 ### Test Categories
-- **smoke**: Quick tests for basic functionality
+- **clear-state**: Quick tests for basic functionality with clean app state
 - **regression**: Comprehensive tests for existing features
 - **feature**: Tests for specific features
 - **integration**: End-to-end integration tests
@@ -242,8 +238,8 @@ timeouts:
 
 ### Usage Examples
 ```bash
-# Run smoke tests only
-./run-tests.sh -t smoke
+# Run clear state tests only
+./run-tests.sh -t "clear-state"
 
 # Run regression excluding slow tests
 ./run-tests.sh -t regression -e slow
@@ -351,7 +347,7 @@ timeouts:
 - Use efficient selectors
 
 ### Framework Optimization
-- Organize tests by category
+- Organize tests by category (feature, clear-state, post-signup)
 - Use tags for selective execution
 - Implement proper cleanup
 - Monitor resource usage
@@ -369,8 +365,8 @@ jobs:
       - uses: actions/checkout@v3
       - name: Run Maestro Tests
         run: |
-          ./run-tests.sh -p android -t smoke --format junit
-          ./run-tests.sh -p ios -t smoke --format junit
+          ./run-tests.sh -p android -t "guest,clear-state" --format junit
+./run-tests.sh -p ios -t "guest,clear-state" --format junit
 ```
 
 ### JUnit Integration
@@ -384,16 +380,16 @@ jobs:
 
 ## 🎯 Best Practices Summary
 
-1. **Organize tests by category** (smoke, regression, feature, integration)
+1. **Organize tests by category** (feature, clear-state, post-signup)
 2. **Use descriptive tags** for test selection
 3. **Implement proper error handling** with retry logic
 4. **Add comprehensive logging** for debugging
 5. **Use conditional execution** for platform-specific tests
 6. **Implement flow hooks** for setup and cleanup
 7. **Use advanced selectors** for reliable element interaction
-8. **Enable AI analysis** for automated insights
-9. **Generate multiple report formats** for different stakeholders
-10. **Monitor performance** and optimize test execution
+8. **Generate multiple report formats** for different stakeholders
+9. **Monitor performance** and optimize test execution
+
 
 ## 🤖 Maestro MCP Integration
 

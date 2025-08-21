@@ -10,10 +10,8 @@ mobile-automation-scopex/
 ├── run-tests.sh                    # Advanced test runner script
 ├── setup.sh                        # Environment setup script
 ├── flows/                          # Test flows organized by category
-│   ├── smoke/                      # Quick smoke tests
-│   ├── regression/                 # Comprehensive regression tests
-│   ├── feature/                    # Feature-specific tests
-│   └── integration/                # Integration tests
+│   └── feature/                    # All test flows organized here
+
 ├── apps/                           # App binaries
 │   ├── android/app-release.apk
 │   └── ios/MyApp.app
@@ -34,7 +32,7 @@ mobile-automation-scopex/
 
 ### 1. Test Flow Organization
 - **ALWAYS** organize test flows by category in the `flows/` directory
-- **USE** descriptive tags for test categorization (smoke, regression, feature, integration)
+- **USE** descriptive tags for test categorization (feature, clear-state, post-signup, critical)
 - **FOLLOW** the naming convention: `category/test-name.yaml`
 - **INCLUDE** proper metadata (appId, name, tags) in every flow
 
@@ -72,7 +70,7 @@ onFlowComplete:
 - **USE** the `run-tests.sh` script for all test execution
 - **INCLUDE** appropriate tags for test selection
 - **SPECIFY** platform when needed (`-p android` or `-p ios`)
-- **ENABLE** AI analysis with `--analyze` for regression tests
+- **ENABLE** comprehensive reporting with HTML and JUnit formats
 - **USE** `--format junit` for CI/CD integration
 
 ### 4. Error Handling & Reliability
@@ -106,7 +104,7 @@ onFlowComplete:
 6. **TEST** on both platforms if applicable
 
 ### 2. Test Flow Best Practices
-- **START** with smoke tests for basic functionality
+- **START** with clear state tests for basic functionality
 - **BUILD** regression tests for comprehensive coverage
 - **CREATE** feature tests for specific functionality
 - **DEVELOP** integration tests for end-to-end scenarios
@@ -129,39 +127,37 @@ onFlowComplete:
 
 ## 🎯 Test Categories & Tags
 
-### Smoke Tests
-- **Purpose**: Quick validation of basic functionality
-- **Tags**: `smoke`, `critical`
-- **Examples**: App launch, basic navigation
+### Clear State Tests
+- **Purpose**: Quick validation of basic functionality with clean app state
+- **Tags**: `feature`, `clear-state`, `critical`
+- **Examples**: App launch, guest user journey, signup
 - **Execution**: Run first, fast execution
 - **Current Tests**: 
-  - `flows/smoke/app-launch.yaml` (smoke, launch, critical)
-  - `flows/feature/guest-user-journey.yaml` (smoke, regression, guest, onboarding, critical)
+  - `flows/feature/app-launch-clear-state.yaml` (feature, launch, clear-state, critical)
+  - `flows/feature/guest-user-journey-clear-state.yaml` (feature, guest, clear-state, critical)
+  - `flows/feature/signup-flow-clear-state.yaml` (feature, signup, clear-state, critical)
 
 ### Regression Tests
 - **Purpose**: Comprehensive testing of existing features
 - **Tags**: `regression`, `critical`
 - **Examples**: Complete user journeys, end-to-end flows
-- **Execution**: Run after smoke tests, comprehensive coverage
+- **Execution**: Run after clear state tests, comprehensive coverage
 - **Current Tests**:
-  - `flows/feature/guest-user-journey.yaml` (smoke, regression, guest, onboarding, critical)
+  - `flows/feature/guest-user-journey-clear-state.yaml` (feature, guest, clear-state, critical)
 
 ### Feature Tests (`flows/feature/`)
 - **Purpose**: Testing specific features
-- **Tags**: `feature`, `template`, `example`
-- **Examples**: User authentication, payment flows
+- **Tags**: `feature`, `clear-state`, `post-signup`, `critical`
+- **Examples**: User authentication, payment flows, wallet functionality
 - **Execution**: Run for specific feature validation
 - **Current Tests**:
-  - `flows/feature/guest-user-journey.yaml` (smoke, regression, guest, onboarding, critical)
-  - `flows/feature/template-flow.yaml` (template, example)
+  - `flows/feature/app-launch-clear-state.yaml` (feature, launch, clear-state, critical)
+  - `flows/feature/guest-user-journey-clear-state.yaml` (feature, guest, clear-state, critical)
+  - `flows/feature/signup-flow-clear-state.yaml` (feature, signup, clear-state, critical)
+  - `flows/feature/send-money-flow.yaml` (feature, send-money, post-signup, critical)
+  - `flows/feature/wallet-flow.yaml` (feature, wallet, post-signup, critical)
 
-### Integration Tests (`flows/integration/`)
-- **Purpose**: Testing component integration
-- **Tags**: `integration`, `navigation`, `critical`
-- **Examples**: Cross-feature navigation, API integration
-- **Execution**: Run for integration validation
-- **Current Tests**:
-  - `flows/integration/main-navigation.yaml` (integration, navigation, critical)
+
 
 ## 🚀 Command Examples
 
@@ -174,10 +170,10 @@ onFlowComplete:
 
 ### Test Execution
 ```bash
-./run-tests.sh -t smoke                    # Smoke tests
-./run-tests.sh -t regression --analyze     # Regression with AI
+./run-tests.sh -t "guest,clear-state"      # Guest user tests
+./run-tests.sh -t regression               # Regression tests
 ./run-tests.sh -p android -t critical      # Critical tests on Android
-./run-tests.sh --format junit -t smoke     # JUnit reports
+./run-tests.sh --format junit -t feature   # JUnit reports
 ./run-tests.sh -v --debug --timeout 300    # Verbose debug
 ```
 
@@ -185,7 +181,7 @@ onFlowComplete:
 ```bash
 ./run-tests.sh --sequential --retry 3      # Sequential with retries
 ./run-tests.sh --device "emulator-5554"    # Specific device
-./run-tests.sh -t "smoke,critical"         # Multiple tags
+./run-tests.sh -t "clear-state,critical"   # Multiple tags
 ```
 
 ## 🔍 Troubleshooting Rules
@@ -234,7 +230,7 @@ onFlowComplete:
 - [ ] Screenshots at key verification points
 
 ### Performance Standards
-- Smoke tests should complete within 2-3 minutes
+- Clear state tests should complete within 3-5 minutes
 - Regression tests should complete within 10-15 minutes
 - Feature tests should complete within 5-8 minutes
 - Integration tests should complete within 8-12 minutes
@@ -250,10 +246,10 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Run Smoke Tests
+      - name: Run Guest User Tests
         run: |
-          ./run-tests.sh -p android -t smoke --format junit
-          ./run-tests.sh -p ios -t smoke --format junit
+          ./run-tests.sh -p android -t "guest,clear-state" --format junit
+          ./run-tests.sh -p ios -t "guest,clear-state" --format junit
       - name: Run Regression Tests
         run: |
           ./run-tests.sh -p android -t regression --format junit

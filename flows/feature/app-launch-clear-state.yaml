@@ -1,0 +1,56 @@
+# App Launch with Clear State - For Guest User and Signup Flows
+# Ensures clean app state for authentication flows
+
+appId: com.scopex.scopexmobilev2
+name: "App Launch with Clear State"
+tags: ["feature", "launch", "clear-state", "guest", "signup", "critical"]
+
+# Environment variables
+env:
+  TEST_START_TIME: "${Date.now()}"
+  PLATFORM: "${maestro.platform}"
+
+# Flow hooks for setup and cleanup
+onFlowStart:
+  - evalScript: "output.testStartTime = Date.now();"
+
+onFlowComplete:
+  - evalScript: "const duration = Date.now() - output.testStartTime;"
+  - takeScreenshot: "app-launch-clear-state-complete"
+
+---
+# Start screen recording
+- startRecording:
+    path: 'app-launch-clear-state'
+    label: 'App Launch with Clear State Recording'
+
+# Step 1: Launch the app with state clearing
+- launchApp:
+    appId: "com.scopex.scopexmobilev2"
+    clearState: true
+    clearKeychain: true
+
+# Step 2: Wait for app to load and verify initial screen
+- extendedWaitUntil:
+    visible: "Continue"
+    timeout: 15000
+
+# Step 3: Verify onboarding elements are present
+- assertVisible: "25 Paisa better than google rates"
+- assertVisible: "€10 Reward on first transaction"
+
+# Step 4: Take initial screenshot
+- takeScreenshot: "app-launched-clear-state"
+
+# Step 5: Verify app is ready for interaction
+- assertTrue: "maestro.appId === 'com.scopex.scopexmobilev2'"
+
+# Step 6: Extract and log element text for verification
+- copyTextFrom: "Continue"
+
+# Step 7: Verify app state
+- assertVisible: "Continue"
+- assertNotVisible: "Error"
+
+# Stop recording
+- stopRecording

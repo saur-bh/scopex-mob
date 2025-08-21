@@ -18,18 +18,15 @@ testOutputDir: "reports"
 
 # Test flows with proper organization
 flows:
-  - "flows/smoke/*.yaml"           # Smoke tests
-  - "flows/regression/*.yaml"      # Regression tests
-  - "flows/feature/*.yaml"         # Feature-specific tests
-  - "flows/integration/*.yaml"     # Integration tests
+  - "flows/feature/*.yaml"         # All feature tests organized here
 
 # Execution order for sequential tests
 executionOrder:
   continueOnFailure: false
   flowsOrder:
-    - "app-launch"
-    - "guest-user-journey"
-    - "main-navigation"
+    - "app-launch-clear-state"
+    - "guest-user-journey-clear-state"
+    - "signup-flow-clear-state"
 
 # Environment variables
 env:
@@ -44,7 +41,6 @@ testing:
   output: "reports"
   verbose: true
   debug: true
-  analyze: true  # Enable AI analysis
 
 # Device configuration
 device:
