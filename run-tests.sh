@@ -569,115 +569,394 @@ run_signup_first() {
     sleep 2
 }
 
-# Function to enhance HTML report with media links
-enhance_html_report() {
+# Function to create comprehensive test report with Tailwind CSS
+create_comprehensive_report() {
     local output_dir="$1"
-    local html_report="$output_dir/report.html"
+    local test_results="$2"
+    local execution_time="$3"
+    local platform="$4"
+    local device="$5"
     
-    if [[ ! -f "$html_report" ]]; then
-        return
-    fi
+    local report_file="$output_dir/comprehensive-report.html"
+    local step_log_file="$output_dir/step-logs/test-execution.log"
     
-    # Create a simple media links file instead of modifying HTML
-    local media_links_file="$output_dir/media-links.html"
+    # Parse test results
+    local total_flows=0
+    local passed_flows=0
+    local failed_flows=0
+    local flow_details=""
     
-    cat > "$media_links_file" << 'EOF'
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Test Media Files</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-    <div class="container mt-4">
-        <h1 class="mb-4">📸 Test Media Files</h1>
-        
-        <div class="row">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5>🎥 Recordings</h5>
-                    </div>
-                    <div class="card-body">
-                        <ul class="list-group list-group-flush">
-EOF
-    
-    # Add recording links
-    if [[ -d "$output_dir/recordings" ]]; then
-        for recording in "$output_dir/recordings"/*.mp4; do
-            if [[ -f "$recording" ]]; then
-                local filename=$(basename "$recording")
-                local test_name=$(echo "$filename" | sed 's/\.mp4$//' | sed 's/-/ /g' | sed 's/_/ /g')
-                local file_size=$(ls -lh "$recording" | awk '{print $5}')
-                echo "                            <li class='list-group-item'>
-                                <a href='recordings/$filename' target='_blank' class='btn btn-primary btn-sm'>
-                                    📹 $test_name
-                                </a>
-                                <small class='text-muted'>$file_size</small>
-                            </li>" >> "$media_links_file"
-            fi
-        done
-    fi
-    
-    cat >> "$media_links_file" << 'EOF'
-                        </ul>
+    # Count flows and parse results
+    while IFS= read -r line; do
+        if [[ $line =~ \[Passed\] ]]; then
+            ((passed_flows++))
+            ((total_flows++))
+            local flow_name=$(echo "$line" | sed 's/.*\[Passed\] \(.*\) (.*/\1/')
+            local duration=$(echo "$line" | sed 's/.*(\(.*\))/\1/')
+            flow_details="$flow_details
+            <div class='flow-item passed' data-flow='$flow_name'>
+                <div class='flow-header'>
+                    <span class='status-badge passed'>✅ PASSED</span>
+                    <span class='flow-name'>$flow_name</span>
+                    <span class='duration'>$duration</span>
+                </div>
+                <div class='flow-details'>
+                    <p class='text-green-600'>Flow executed successfully</p>
+                </div>
+            </div>"
+        elif [[ $line =~ \[Failed\] ]]; then
+            ((failed_flows++))
+            ((total_flows++))
+            local flow_name=$(echo "$line" | sed 's/.*\[Failed\] \(.*\) (.*/\1/')
+            local duration=$(echo "$line" | sed 's/.*(\(.*\))/\1/')
+            local error=$(echo "$line" | sed 's/.*(\(.*\))/\1/' | sed 's/.*) (\(.*\))/\1/')
+            flow_details="$flow_details
+            <div class='flow-item failed' data-flow='$flow_name'>
+                <div class='flow-header'>
+                    <span class='status-badge failed'>❌ FAILED</span>
+                    <span class='flow-name'>$flow_name</span>
+                    <span class='duration'>$duration</span>
+                </div>
+                <div class='flow-details'>
+                    <p class='text-red-600 font-semibold'>Error: $error</p>
+                    <div class='error-analysis'>
+                        <h4 class='text-lg font-semibold mb-2'>🔍 Error Analysis</h4>
+                        <div class='error-details'>
+                            <p><strong>Possible Causes:</strong></p>
+                            <ul class='list-disc list-inside space-y-1'>
+                                <li>Element not found on screen</li>
+                                <li>App state mismatch</li>
+                                <li>Timing issues</li>
+                                <li>Device/emulator problems</li>
+                            </ul>
+                            <p class='mt-3'><strong>Recommended Actions:</strong></p>
+                            <ul class='list-disc list-inside space-y-1'>
+                                <li>Check screenshots for visual verification</li>
+                                <li>Review step-by-step logs</li>
+                                <li>Verify app installation and state</li>
+                                <li>Check device connectivity</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5>📸 Screenshots</h5>
-                    </div>
-                    <div class="card-body">
-                        <ul class="list-group list-group-flush">
-EOF
+            </div>"
+        fi
+    done <<< "$test_results"
     
-    # Add screenshot links
+    # Calculate success rate
+    local success_rate=0
+    if [[ $total_flows -gt 0 ]]; then
+        success_rate=$((passed_flows * 100 / total_flows))
+    fi
+    
+    # Get media files
+    local screenshots=""
+    local recordings=""
+    
     if [[ -d "$output_dir/screenshots" ]]; then
         for screenshot in "$output_dir/screenshots"/*.png; do
             if [[ -f "$screenshot" ]]; then
                 local filename=$(basename "$screenshot")
                 local test_name=$(echo "$filename" | sed 's/\.png$//' | sed 's/-/ /g' | sed 's/_/ /g')
-                local file_size=$(ls -lh "$screenshot" | awk '{print $5}')
-                echo "                            <li class='list-group-item'>
-                                <a href='screenshots/$filename' target='_blank' class='btn btn-info btn-sm'>
-                                    🖼️ $test_name
-                                </a>
-                                <small class='text-muted'>$file_size</small>
-                            </li>" >> "$media_links_file"
+                screenshots="$screenshots
+                <div class='media-item'>
+                    <a href='screenshots/$filename' target='_blank' class='media-link'>
+                        <img src='screenshots/$filename' alt='$test_name' class='media-thumbnail'>
+                        <span class='media-label'>📸 $test_name</span>
+                    </a>
+                </div>"
             fi
         done
     fi
     
-    cat >> "$media_links_file" << 'EOF'
-                        </ul>
+    if [[ -d "$output_dir/recordings" ]]; then
+        for recording in "$output_dir/recordings"/*.mp4; do
+            if [[ -f "$recording" ]]; then
+                local filename=$(basename "$recording")
+                local test_name=$(echo "$filename" | sed 's/\.mp4$//' | sed 's/-/ /g' | sed 's/_/ /g')
+                recordings="$recordings
+                <div class='media-item'>
+                    <a href='recordings/$filename' target='_blank' class='media-link'>
+                        <video class='media-thumbnail' muted>
+                            <source src='recordings/$filename' type='video/mp4'>
+                        </video>
+                        <span class='media-label'>🎥 $test_name</span>
+                    </a>
+                </div>"
+            fi
+        done
+    fi
+    
+    # Create comprehensive HTML report
+    cat > "$report_file" << EOF
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScopeX Mobile Test Report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'scope-blue': '#1e40af',
+                        'scope-indigo': '#3730a3'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .flow-item { transition: all 0.3s ease; }
+        .flow-item:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .status-badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+        .status-badge.passed { background-color: #dcfce7; color: #166534; }
+        .status-badge.failed { background-color: #fee2e2; color: #dc2626; }
+        .media-thumbnail { width: 100%; height: 120px; object-fit: cover; border-radius: 0.5rem; }
+        .media-link { display: block; text-decoration: none; color: inherit; }
+        .media-link:hover { transform: scale(1.05); transition: transform 0.2s ease; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .nav-tab { cursor: pointer; padding: 0.75rem 1.5rem; border-bottom: 2px solid transparent; }
+        .nav-tab.active { border-bottom-color: #1e40af; color: #1e40af; font-weight: 600; }
+        .flow-details { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+        .flow-item.expanded .flow-details { max-height: 500px; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-scope-blue to-scope-indigo text-white shadow-lg">
+        <div class="container mx-auto px-6 py-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold">🚀 ScopeX Mobile Test Report</h1>
+                    <p class="text-blue-100 mt-2">Comprehensive Test Execution Results</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm text-blue-100">Generated: $(date '+%Y-%m-%d %H:%M:%S')</p>
+                    <p class="text-sm text-blue-100">Platform: $platform</p>
+                    <p class="text-sm text-blue-100">Device: $device</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Summary Cards -->
+    <div class="container mx-auto px-6 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total Flows</p>
+                        <p class="text-2xl font-semibold text-gray-900">$total_flows</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 text-green-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Passed</p>
+                        <p class="text-2xl font-semibold text-gray-900">$passed_flows</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-red-500">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-red-100 text-red-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Failed</p>
+                        <p class="text-2xl font-semibold text-gray-900">$failed_flows</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-500">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Success Rate</p>
+                        <p class="text-2xl font-semibold text-gray-900">${success_rate}%</p>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <div class="mt-4">
-            <h5>📊 Quick Actions</h5>
-            <a href="step-logs/test-execution.log" target="_blank" class="btn btn-secondary btn-sm me-2">
-                📝 View Detailed Logs
-            </a>
-            <a href="report.html" target="_blank" class="btn btn-primary btn-sm me-2">
-                📊 View Test Report
-            </a>
-            <a href="." class="btn btn-success btn-sm">
-                📁 Open Reports Folder
-            </a>
+
+        <!-- Navigation Tabs -->
+        <div class="bg-white rounded-lg shadow-md mb-8">
+            <div class="border-b border-gray-200">
+                <nav class="flex space-x-8 px-6">
+                    <div class="nav-tab active" onclick="showTab('overview')">📊 Overview</div>
+                    <div class="nav-tab" onclick="showTab('flows')">🔄 Test Flows</div>
+                    <div class="nav-tab" onclick="showTab('media')">📸 Media Files</div>
+                    <div class="nav-tab" onclick="showTab('logs')">📝 Detailed Logs</div>
+                </nav>
+            </div>
+            
+            <!-- Tab Content -->
+            <div class="p-6">
+                <!-- Overview Tab -->
+                <div id="overview" class="tab-content active">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div>
+                            <h3 class="text-xl font-semibold mb-4">📈 Execution Summary</h3>
+                            <div class="space-y-4">
+                                <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                                    <span class="font-medium">Total Execution Time:</span>
+                                    <span class="text-blue-600 font-semibold">$execution_time</span>
+                                </div>
+                                <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                                    <span class="font-medium">Platform:</span>
+                                    <span class="text-blue-600 font-semibold">$platform</span>
+                                </div>
+                                <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                                    <span class="font-medium">Device:</span>
+                                    <span class="text-blue-600 font-semibold">$device</span>
+                                </div>
+                                <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                                    <span class="font-medium">Test Environment:</span>
+                                    <span class="text-blue-600 font-semibold">ScopeX Mobile Automation</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-xl font-semibold mb-4">🎯 Quick Actions</h3>
+                            <div class="space-y-3">
+                                <a href="step-logs/test-execution.log" target="_blank" class="block w-full p-4 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors">
+                                    <div class="flex items-center">
+                                        <svg class="w-5 h-5 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        <span class="font-medium text-blue-800">View Detailed Logs</span>
+                                    </div>
+                                </a>
+                                
+                                <a href="." class="block w-full p-4 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors">
+                                    <div class="flex items-center">
+                                        <svg class="w-5 h-5 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z"></path>
+                                        </svg>
+                                        <span class="font-medium text-green-800">Open Reports Folder</span>
+                                    </div>
+                                </a>
+                                
+                                <button onclick="downloadReport()" class="block w-full p-4 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors">
+                                    <div class="flex items-center">
+                                        <svg class="w-5 h-5 text-purple-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        <span class="font-medium text-purple-800">Download Report</span>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Test Flows Tab -->
+                <div id="flows" class="tab-content">
+                    <h3 class="text-xl font-semibold mb-4">🔄 Test Flow Details</h3>
+                    <div class="space-y-4">
+                        $flow_details
+                    </div>
+                </div>
+                
+                <!-- Media Files Tab -->
+                <div id="media" class="tab-content">
+                    <h3 class="text-xl font-semibold mb-6">📸 Test Media Files</h3>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div>
+                            <h4 class="text-lg font-semibold mb-4 text-blue-600">📸 Screenshots</h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                $screenshots
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h4 class="text-lg font-semibold mb-4 text-green-600">🎥 Recordings</h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                $recordings
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Logs Tab -->
+                <div id="logs" class="tab-content">
+                    <h3 class="text-xl font-semibold mb-4">📝 Execution Logs</h3>
+                    <div class="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto">
+                        <pre>$(cat "$step_log_file" 2>/dev/null || echo "Log file not available")</pre>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
+
+    <script>
+        function showTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all nav tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked nav tab
+            event.target.classList.add('active');
+        }
+        
+        // Make flow items expandable
+        document.querySelectorAll('.flow-item').forEach(item => {
+            item.addEventListener('click', function() {
+                this.classList.toggle('expanded');
+            });
+        });
+        
+        function downloadReport() {
+            const element = document.createElement('a');
+            element.setAttribute('href', 'data:text/html;charset=utf-8,' + encodeURIComponent(document.documentElement.outerHTML));
+            element.setAttribute('download', 'scopex-test-report.html');
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+        }
+    </script>
 </body>
 </html>
 EOF
-    
-    print_success "Created media links file: $media_links_file"
+
+    print_success "Created comprehensive report: $report_file"
 }
 
 # Function to run tests with advanced features and flow dependencies
@@ -794,23 +1073,31 @@ run_tests() {
     echo "=====================================================" >> "$step_log"
     echo "" >> "$step_log"
     
-    # Execute with retry logic
+    # Execute with retry logic and capture results
     local max_retries=${retry:-1}
     local attempt=1
+    local test_results=""
+    local execution_start_time=$(date +%s)
     
     while [[ $attempt -le $max_retries ]]; do
         if [[ $attempt -gt 1 ]]; then
             print_warning "Retry attempt $attempt of $max_retries"
         fi
         
-        if eval "$maestro_cmd" 2>&1 | tee -a "$step_log"; then
+        # Capture test results
+        local temp_output=$(mktemp)
+        if eval "$maestro_cmd" 2>&1 | tee -a "$step_log" "$temp_output"; then
             print_success "Tests completed successfully!"
+            test_results=$(cat "$temp_output")
+            rm "$temp_output"
             break
         else
             if [[ $attempt -eq $max_retries ]]; then
                 print_error "Tests failed after $max_retries attempts"
+                test_results=$(cat "$temp_output")
+                rm "$temp_output"
                 print_status "Check detailed logs at: $step_log"
-                exit 1
+                # Don't exit, continue to generate report
             else
                 print_warning "Test attempt $attempt failed, retrying..."
                 attempt=$((attempt + 1))
@@ -819,29 +1106,30 @@ run_tests() {
         fi
     done
     
+    local execution_end_time=$(date +%s)
+    local execution_duration=$((execution_end_time - execution_start_time))
+    local execution_time="${execution_duration}s"
+    
     # Organize test outputs
     organize_test_outputs "$output_dir"
     
-    # Enhance HTML report with media links
-    enhance_html_report "$output_dir"
+    # Create comprehensive report
+    create_comprehensive_report "$output_dir" "$test_results" "$execution_time" "$platform" "$device"
     
     # Show results
     print_status "Results saved to: $output_dir"
     
-    # Show HTML report location
-    local html_report="$output_dir/report.$format"
-    if [[ -f "$html_report" ]]; then
-        print_success "Report: $html_report"
-        if [[ "$format" == "html" ]]; then
-            print_status "Open in browser: open '$html_report'"
-        fi
+    # Show comprehensive report location
+    local comprehensive_report="$output_dir/comprehensive-report.html"
+    if [[ -f "$comprehensive_report" ]]; then
+        print_success "📊 Comprehensive Report: $comprehensive_report"
+        print_status "Open in browser: open '$comprehensive_report'"
     fi
     
-    # Show media links file location
-    local media_links_file="$output_dir/media-links.html"
-    if [[ -f "$media_links_file" ]]; then
-        print_success "Media Links: $media_links_file"
-        print_status "Open media files: open '$media_links_file'"
+    # Show original Maestro report location
+    local maestro_report="$output_dir/report.$format"
+    if [[ -f "$maestro_report" ]]; then
+        print_success "📋 Maestro Report: $maestro_report"
     fi
     
 

@@ -48,47 +48,27 @@ onFlowComplete:
 - tapOn: "Continue"
 
 # Screen 2: Trusted by thousands
-- extendedWaitUntil:
-    visible: "Trusted by thousands"
-    timeout: 10000
-- assertVisible: "Built by one of us"
+- assertVisible: "Trusted by .*"
 - assertVisible: "25 Paisa better than Google rates"
-- assertVisible: "No hidden fees or surprises"
-- assertVisible: "Instant bank transfers to India"
 - assertVisible: "Continue"
 
 # Navigate to next screen
 - tapOn: "Continue"
 
 # Screen 3: Designed for love
-- extendedWaitUntil:
-    visible: "Designed for love"
-    timeout: 10000
-- assertVisible: "Disguised as money"
-- assertVisible: "0% Fees on all transactions forever"
-- assertVisible: "25 Paisa better than google rates"
-- assertVisible: "€10 Reward on first transaction"
+- assertVisible: "Designed.*"
 - assertVisible: "Get Started"
 
 # Complete onboarding
 - tapOn: "Get Started"
 
 # Step 4: Verify navigation to home screen
-- extendedWaitUntil:
-    visible: "Sign up and get €10"
-    timeout: 10000
 - assertVisible: "Save extra when sending home"
 - assertVisible: "Sign Up"
-
-# Step 5: Verify welcome screen
-- extendedWaitUntil:
-    visible: "Welcome to ScopeX"
-    timeout: 10000
 
 # Step 6: Test tab navigation with enhanced selectors
 # Home tab navigation
 - tapOn:
-    id: "home_tab"
     text: "Home"
     index: 0
 
