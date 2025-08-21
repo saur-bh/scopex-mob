@@ -67,23 +67,50 @@ onFlowComplete:
 - assertVisible: "Sign Up"
 
 # Step 6: Test tab navigation with enhanced selectors
-# Home tab navigation
-- tapOn: "Home"
+# Wait for main app screen to be visible
+- extendedWaitUntil:
+    visible: "Save extra when sending home"
+    timeout: 10000
+
+# Home tab navigation - use more specific selector
+- tapOn:
+    text: "Home"
+    index: 0
+    enabled: true
+
+# Verify we're on home screen
+- assertVisible: "Save extra when sending home"
 
 # Compare tab navigation
-- tapOn: "Compare"
+- tapOn:
+    text: "Compare"
+    index: 0
+    enabled: true
+
 # Settings tab navigation
-- tapOn: "Settings"
+- tapOn:
+    text: "Settings"
+    index: 0
+    enabled: true
 
 # Step 7: Verify main navigation elements with scroll support
 # Use scrollUntilVisible for elements that might be off-screen
 
-- tapOn: "Transfers"
+# Test Transfers section
+- tapOn:
+    text: "Transfers"
+    index: 0
+    enabled: true
 - assertVisible: "Sign up to.*"
 
+# Test Wallet section
 - assertVisible: "Wallet"
-- tapOn: "Wallet"
+- tapOn:
+    text: "Wallet"
+    index: 0
+    enabled: true
 
+# Verify wallet verification message
 - assertVisible: '(?i).+\bverify\s+to\s+claim\b.+'
 
 
