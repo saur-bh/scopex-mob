@@ -112,12 +112,33 @@ start_device() {
     local platform="$1"
     print_device "Starting $platform device..."
     
-    if maestro start-device --platform="$platform"; then
-        print_success "$platform device started successfully"
-        return 0
+    if [[ "$platform" == "ios" ]]; then
+        # For iOS, try to boot an existing simulator instead of creating new one
+        local available_simulator=$(xcrun simctl list devices 2>/dev/null | grep "iPhone" | grep "Shutdown" | head -n 1 | cut -d'(' -f2 | cut -d')' -f1 | tr -d '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        
+        if [[ -n "$available_simulator" ]]; then
+            print_device "Booting iOS simulator: $available_simulator"
+            if xcrun simctl boot "$available_simulator" >/dev/null 2>&1; then
+                print_success "iOS device started successfully"
+                return 0
+            else
+                print_error "Failed to start iOS device"
+                return 1
+            fi
+        else
+            print_error "No available iOS simulators found"
+            print_status "Please create an iOS simulator in Xcode first"
+            return 1
+        fi
     else
-        print_error "Failed to start $platform device"
-        return 1
+        # For Android, use Maestro's start-device command
+        if maestro start-device --platform="$platform"; then
+            print_success "$platform device started successfully"
+            return 0
+        else
+            print_error "Failed to start $platform device"
+            return 1
+        fi
     fi
 }
 
@@ -699,10 +720,10 @@ create_comprehensive_report() {
                                 <li>Review step-by-step logs</li>
                                 <li>Verify app installation and state</li>
                                 <li>Check device connectivity</li>
-                            </ul>
-                        </div>
+                        </ul>
                     </div>
                 </div>
+            </div>
             </div>"
         fi
     done <<< "$test_results"
@@ -797,7 +818,7 @@ create_comprehensive_report() {
                 <div>
                     <h1 class="text-3xl font-bold">🚀 ScopeX Mobile Test Report</h1>
                     <p class="text-blue-100 mt-2">Comprehensive Test Execution Results</p>
-                </div>
+                    </div>
                 <div class="text-right">
                     <p class="text-sm text-blue-100">Generated: $(date '+%Y-%m-%d %H:%M:%S')</p>
                     <p class="text-sm text-blue-100">Platform: $platform</p>
@@ -937,9 +958,9 @@ create_comprehensive_report() {
                                 </button>
                             </div>
                         </div>
-                    </div>
-                </div>
-                
+        </div>
+    </div>
+    
                 <!-- Test Flows Tab -->
                 <div id="flows" class="tab-content">
                     <h3 class="text-xl font-semibold mb-4">🔄 Test Flow Details</h3>
@@ -1019,7 +1040,7 @@ create_comprehensive_report() {
 </body>
 </html>
 EOF
-
+    
     print_success "Created comprehensive report: $report_file"
 }
 
@@ -1441,18 +1462,28 @@ main() {
             if [[ -n "$device" ]]; then
                 print_success "Found existing iOS device: $device"
             else
-                print_device "No iOS device found. Starting new device..."
-                if maestro start-device --platform=ios >/dev/null 2>&1; then
-                    sleep 10
-                    device=$(xcrun simctl list devices 2>/dev/null | grep "Booted" | head -n 1 | cut -d'(' -f2 | cut -d')' -f1 | tr -d '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-                    if [[ -n "$device" ]]; then
-                        print_success "Successfully started iOS device: $device"
+                print_device "No iOS device found. Starting existing iOS simulator..."
+                # Try to boot an existing iOS simulator instead of creating new one
+                local available_simulator=$(xcrun simctl list devices 2>/dev/null | grep "iPhone" | grep "Shutdown" | head -n 1 | cut -d'(' -f2 | cut -d')' -f1 | tr -d '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+                
+                if [[ -n "$available_simulator" ]]; then
+                    print_device "Booting iOS simulator: $available_simulator"
+                    if xcrun simctl boot "$available_simulator" >/dev/null 2>&1; then
+                        sleep 10
+                        device=$(xcrun simctl list devices 2>/dev/null | grep "Booted" | head -n 1 | cut -d'(' -f2 | cut -d')' -f1 | tr -d '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+                        if [[ -n "$device" ]]; then
+                            print_success "Successfully started iOS device: $device"
+                        else
+                            print_error "Failed to start iOS device"
+                            exit 1
+                        fi
                     else
-                        print_error "Failed to start iOS device"
+                        print_error "Failed to boot iOS simulator"
                         exit 1
                     fi
                 else
-                    print_error "Failed to start iOS device"
+                    print_error "No available iOS simulators found"
+                    print_status "Please create an iOS simulator in Xcode first"
                     exit 1
                 fi
             fi
