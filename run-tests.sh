@@ -1151,17 +1151,116 @@ main() {
         for p in "android" "ios"; do
             print_device "Setting up $p platform..."
             
-            # Ensure device is running
-            local device_id=$(ensure_device_running "$p")
-            if [[ -z "$device_id" ]]; then
-                print_error "Failed to ensure $p device is running"
-                continue
-            fi
-            
-            # Ensure app is installed
-            if ! ensure_app_installed "$p" "$device_id"; then
-                print_error "Failed to ensure app is installed on $p device"
-                continue
+            if [[ "$p" == "android" ]]; then
+                # Get or start Android device
+                local device_id=$(adb devices 2>/dev/null | grep -v "List of devices" | grep -v "^$" | head -n 1 | cut -f1 | tr -d '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+                
+                if [[ -n "$device_id" ]]; then
+                    print_success "Found existing Android device: $device_id"
+                else
+                    print_device "No Android device found. Starting new device..."
+                    if maestro start-device --platform=android >/dev/null 2>&1; then
+                        sleep 10
+                        device_id=$(adb devices 2>/dev/null | grep -v "List of devices" | grep -v "^$" | head -n 1 | cut -f1 | tr -d '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+                        if [[ -n "$device_id" ]]; then
+                            print_success "Successfully started Android device: $device_id"
+                        else
+                            print_error "Failed to start Android device"
+                            continue
+                        fi
+                    else
+                        print_error "Failed to start Android device"
+                        continue
+                    fi
+                fi
+                
+                # Wait for device to be ready
+                print_device "Waiting for Android device to be ready..."
+                local attempts=0
+                while [[ $attempts -lt 30 ]]; do
+                    if adb -s "$device_id" shell getprop sys.boot_completed 2>/dev/null | grep -q "1" 2>/dev/null; then
+                        print_success "Android device is ready"
+                        break
+                    fi
+                    sleep 2
+                    ((attempts++))
+                done
+                
+                if [[ $attempts -eq 30 ]]; then
+                    print_error "Android device did not become ready"
+                    continue
+                fi
+                
+                # Install app
+                local apk_path="apps/android/app-release.apk"
+                if [[ -f "$apk_path" ]]; then
+                    print_device "Installing Android app on device: $device_id"
+                    
+                    # Uninstall if exists
+                    if adb -s "$device_id" shell pm list packages | grep -q "com.scopex.scopexmobilev2" 2>/dev/null; then
+                        print_device "Uninstalling existing app..."
+                        adb -s "$device_id" uninstall com.scopex.scopexmobilev2 >/dev/null 2>&1
+                        sleep 2
+                    fi
+                    
+                    # Install fresh
+                    if adb -s "$device_id" install "$apk_path" >/dev/null 2>&1; then
+                        print_success "Android app installed successfully"
+                    else
+                        print_error "Failed to install Android app"
+                        continue
+                    fi
+                else
+                    print_error "Android APK not found at: $apk_path"
+                    continue
+                fi
+                
+            elif [[ "$p" == "ios" ]]; then
+                # Get or start iOS device
+                local device_id=$(xcrun simctl list devices 2>/dev/null | grep "Booted" | head -n 1 | cut -d'(' -f2 | cut -d')' -f1 | tr -d '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+                
+                if [[ -n "$device_id" ]]; then
+                    print_success "Found existing iOS device: $device_id"
+                else
+                    print_device "No iOS device found. Starting new device..."
+                    if maestro start-device --platform=ios >/dev/null 2>&1; then
+                        sleep 10
+                        device_id=$(xcrun simctl list devices 2>/dev/null | grep "Booted" | head -n 1 | cut -d'(' -f2 | cut -d')' -f1 | tr -d '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+                        if [[ -n "$device_id" ]]; then
+                            print_success "Successfully started iOS device: $device_id"
+                        else
+                            print_error "Failed to start iOS device"
+                            continue
+                        fi
+                    else
+                        print_error "Failed to start iOS device"
+                        continue
+                    fi
+                fi
+                
+                # Install app
+                local app_path="apps/ios/MyApp.app"
+                if [[ -d "$app_path" ]]; then
+                    print_device "Installing iOS app on device: $device_id"
+                    
+                    # Uninstall if exists
+                    if xcrun simctl listapps "$device_id" | grep -q "com.scopex.scopexmobilev2" 2>/dev/null; then
+                        print_device "Uninstalling existing app..."
+                        xcrun simctl uninstall "$device_id" com.scopex.scopexmobilev2 >/dev/null 2>&1
+                        sleep 2
+                    fi
+                    
+                    # Install fresh
+                    if xcrun simctl install "$device_id" "$app_path" >/dev/null 2>&1; then
+                        print_success "iOS app installed successfully"
+                    else
+                        print_error "Failed to install iOS app"
+                        continue
+                    fi
+                else
+                    print_error "iOS app not found at: $app_path"
+                    continue
+                fi
             fi
             
             print_success "Device and app ready for testing on $p"
@@ -1177,26 +1276,122 @@ main() {
         case "$choice" in
             1)
                 platform="android"
-                device=$(ensure_device_running "$platform")
+                # Get or start Android device
+                device=$(adb devices 2>/dev/null | grep -v "List of devices" | grep -v "^$" | head -n 1 | cut -f1 | tr -d '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+                
                 if [[ -n "$device" ]]; then
-                    ensure_app_installed "$platform" "$device"
+                    print_success "Found existing Android device: $device"
+                else
+                    print_device "No Android device found. Starting new device..."
+                    if maestro start-device --platform=android >/dev/null 2>&1; then
+                        sleep 10
+                        device=$(adb devices 2>/dev/null | grep -v "List of devices" | grep -v "^$" | head -n 1 | cut -f1 | tr -d '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+                        if [[ -n "$device" ]]; then
+                            print_success "Successfully started Android device: $device"
+                        else
+                            print_error "Failed to start Android device"
+                            exit 1
+                        fi
+                    else
+                        print_error "Failed to start Android device"
+                        exit 1
+                    fi
+                fi
+                
+                # Wait for device to be ready
+                print_device "Waiting for Android device to be ready..."
+                local attempts=0
+                while [[ $attempts -lt 30 ]]; do
+                    if adb -s "$device" shell getprop sys.boot_completed 2>/dev/null | grep -q "1" 2>/dev/null; then
+                        print_success "Android device is ready"
+                        break
+                    fi
+                    sleep 2
+                    ((attempts++))
+                done
+                
+                if [[ $attempts -eq 30 ]]; then
+                    print_error "Android device did not become ready"
+                    exit 1
+                fi
+                
+                # Install app
+                local apk_path="apps/android/app-release.apk"
+                if [[ -f "$apk_path" ]]; then
+                    print_device "Installing Android app on device: $device"
+                    
+                    # Uninstall if exists
+                    if adb -s "$device" shell pm list packages | grep -q "com.scopex.scopexmobilev2" 2>/dev/null; then
+                        print_device "Uninstalling existing app..."
+                        adb -s "$device" uninstall com.scopex.scopexmobilev2 >/dev/null 2>&1
+                        sleep 2
+                    fi
+                    
+                    # Install fresh
+                    if adb -s "$device" install "$apk_path" >/dev/null 2>&1; then
+                        print_success "Android app installed successfully"
+                    else
+                        print_error "Failed to install Android app"
+                        exit 1
+                    fi
+                else
+                    print_error "Android APK not found at: $apk_path"
+                    exit 1
                 fi
                 ;;
             2)
                 platform="ios"
-                device=$(ensure_device_running "$platform")
+                # Get or start iOS device
+                device=$(xcrun simctl list devices 2>/dev/null | grep "Booted" | head -n 1 | cut -d'(' -f2 | cut -d')' -f1 | tr -d '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+                
                 if [[ -n "$device" ]]; then
-                    ensure_app_installed "$platform" "$device"
+                    print_success "Found existing iOS device: $device"
+                else
+                    print_device "No iOS device found. Starting new device..."
+                    if maestro start-device --platform=ios >/dev/null 2>&1; then
+                        sleep 10
+                        device=$(xcrun simctl list devices 2>/dev/null | grep "Booted" | head -n 1 | cut -d'(' -f2 | cut -d')' -f1 | tr -d '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+                        if [[ -n "$device" ]]; then
+                            print_success "Successfully started iOS device: $device"
+                        else
+                            print_error "Failed to start iOS device"
+                            exit 1
+                        fi
+                    else
+                        print_error "Failed to start iOS device"
+                        exit 1
+                    fi
+                fi
+                
+                # Install app
+                local app_path="apps/ios/MyApp.app"
+                if [[ -d "$app_path" ]]; then
+                    print_device "Installing iOS app on device: $device"
+                    
+                    # Uninstall if exists
+                    if xcrun simctl listapps "$device" | grep -q "com.scopex.scopexmobilev2" 2>/dev/null; then
+                        print_device "Uninstalling existing app..."
+                        xcrun simctl uninstall "$device" com.scopex.scopexmobilev2 >/dev/null 2>&1
+                        sleep 2
+                    fi
+                    
+                    # Install fresh
+                    if xcrun simctl install "$device" "$app_path" >/dev/null 2>&1; then
+                        print_success "iOS app installed successfully"
+                    else
+                        print_error "Failed to install iOS app"
+                        exit 1
+                    fi
+                else
+                    print_error "iOS app not found at: $app_path"
+                    exit 1
                 fi
                 ;;
             3)
                 platform="both"
-                for p in "android" "ios"; do
-                    local device_id=$(ensure_device_running "$p")
-                    if [[ -n "$device_id" ]]; then
-                        ensure_app_installed "$p" "$device_id"
-                    fi
-                done
+                print_error "Both platforms not supported in interactive mode"
+                print_status "Please specify platform explicitly: -p android or -p ios"
+                exit 1
                 ;;
             *)
                 print_error "Invalid choice"
