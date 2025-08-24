@@ -1,0 +1,147 @@
+# Recipient - this is to test user can add recipient using setting
+# this is to test user can add recipient using setting
+
+# IMPORTANT: Use Maestro Studio to record your test steps!
+# 1. Run: maestro studio
+# 2. Record your test actions
+# 3. Copy the generated commands to replace the placeholder steps below
+
+appId: com.scopex.scopexmobilev2
+name: "Recipient"
+tags: ["feature", "smoke"]
+
+# Environment variables
+env:
+  TEST_START_TIME: "${Date.now()}"
+  PLATFORM: "${maestro.platform}"
+  MAX_RETRIES: "3"
+
+# Flow hooks for setup and cleanup
+onFlowStart:
+  - evalScript: "output.testStartTime = Date.now();"
+  - evalScript: "output.stepCount = 0;"
+
+onFlowComplete:
+  - evalScript: "const duration = Date.now() - output.testStartTime;"
+  - evalScript: "output.stepCount++;"
+  - takeScreenshot: "Recipient-complete"
+
+---
+# Start screen recording
+- startRecording:
+    path: 'Recipient'
+    label: 'Recipient Recording'
+
+# Step 1: Launch the app with state clearing
+- launchApp:
+    appId: "com.scopex.scopexmobilev2"
+    clearState: true
+    clearKeychain: true
+
+# Step 2: Wait for app to load
+- extendedWaitUntil:
+    visible: "Continue"
+    timeout: 15000
+
+# Step 3: Navigate through onboarding
+# Screen 1: Initial onboarding
+- assertVisible: "Continue"
+
+# Navigate to next screen
+- tapOn: "Continue"
+
+# Screen 2: Trusted by thousands
+- assertVisible: "Continue"
+
+# Navigate to next screen
+- tapOn: "Continue"
+
+# Screen 3: Designed for love
+- assertVisible: "Get Started"
+
+# Complete onboarding
+- tapOn: "Get Started"
+
+# Step 4: Handle signup flow
+# Verify navigation to signup screen
+- assertVisible: "Sign.*"
+- assertVisible: "Sign up to continue"
+
+# Tap on Sign up
+- tapOn: "Sign up to continue"
+
+# Verify email input screen
+- extendedWaitUntil:
+    visible: "Email"
+    timeout: 10000
+
+# Enter email
+- tapOn: "Email"
+- inputText: "teshank.2137@gmail.com"
+
+# Tap Next
+- tapOn: "Next"
+- tapOn: "Next"
+
+# Handle OTP flow
+- tapOn: "Login with code"
+
+# Enter OTP
+- tapOn:
+    point: "11%,41%"
+- inputText: "000000"
+
+# Complete OTP verification
+- tapOn: "Next"
+- tapOn: "Next"
+
+# Step 5: Verify successful signup
+- extendedWaitUntil:
+    visible: "Send Money"
+    timeout: 15000
+
+# Step 6: Your specific test steps here (REPLACE WITH RECORDED COMMANDS)
+- evalScript: "console.log('Step 6: Performing test action...');"
+# TODO: Replace with commands recorded from Maestro Studio
+# Example:
+# - tapOn: "Your Element"
+# - inputText: "Your Text"
+# - assertVisible: "Expected Result"
+- evalScript: "console.log('Test action completed');"
+
+# Step 7: Verify expected results
+- evalScript: "console.log('Step 7: Verifying results...');"
+- assertVisible: "Expected Result Element"
+- evalScript: "console.log('Results verified successfully');"
+
+# Step 8: Take screenshot
+- evalScript: "console.log('Step 8: Taking screenshot...');"
+- takeScreenshot: "Recipient-complete"
+
+# Step 9: Final verification
+- evalScript: "console.log('Step 9: Final verification...');"
+- assertTrue: "maestro.appId === 'com.scopex.scopexmobilev2'"
+- evalScript: "console.log('Recipient test completed successfully!');"
+
+# Stop recording
+- evalScript: "console.log('Recording completed - Recipient test finished');"
+- stopRecording
+
+# ============================================================================
+# INSTRUCTIONS FOR RECORDING TEST STEPS:
+# ============================================================================
+# 1. Start Maestro Studio:
+#    maestro studio
+#
+# 2. Record your test actions:
+#    - Navigate through your app
+#    - Perform the actions you want to test
+#    - Maestro will generate the commands
+#
+# 3. Copy the generated commands and replace the placeholder steps above
+#    - Look for the TODO comments
+#    - Replace with your recorded commands
+#
+# 4. Test your flow:
+#    ./run-tests.sh flows/feature/Recipient.yaml
+# ============================================================================

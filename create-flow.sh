@@ -366,13 +366,13 @@ test_new_flow() {
 
 # Function to prompt for tags with defaults
 prompt_for_tags() {
-    echo ""
-    print_step "Tag Selection"
-    echo "Available tags: feature, clear-state, post-signup, critical, guest, authentication"
-    echo "               wallet, payment, profile, settings, onboarding, regression, smoke"
-    echo ""
-    echo "Recommended defaults: regression, smoke"
-    echo ""
+    echo "" >&2
+    print_step "Tag Selection" >&2
+    echo "Available tags: feature, clear-state, post-signup, critical, guest, authentication" >&2
+    echo "               wallet, payment, profile, settings, onboarding, regression, smoke" >&2
+    echo "" >&2
+    echo "Recommended defaults: regression, smoke" >&2
+    echo "" >&2
     read -p "Enter tags (comma-separated) or press Enter for defaults [regression,smoke]: " user_tags
     
     if [[ -z "$user_tags" ]]; then
