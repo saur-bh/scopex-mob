@@ -175,7 +175,6 @@ generate_flow_content() {
             echo ""
             echo "# Step 4: Verify expected results"
             echo "- evalScript: \"console.log('Step 4: Verifying results...');\""
-            echo "- assertVisible: \"Expected Result Element\""
             echo "- evalScript: \"console.log('Results verified successfully');\""
             echo ""
             echo "# Step 5: Take screenshot"

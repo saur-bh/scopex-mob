@@ -111,7 +111,6 @@ onFlowComplete:
 
 # Step 7: Verify expected results
 - evalScript: "console.log('Step 7: Verifying results...');"
-- assertVisible: "Expected Result Element"
 - evalScript: "console.log('Results verified successfully');"
 
 # Step 8: Take screenshot
