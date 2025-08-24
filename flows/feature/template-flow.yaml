@@ -3,7 +3,23 @@
 
 appId: com.scopex.scopexmobilev2
 name: "Template Test Flow"
-tags: ["template", "example"]
+tags: ["template", "example", "feature", "clear-state"]
+
+# Environment variables
+env:
+  TEST_START_TIME: "${Date.now()}"
+  PLATFORM: "${maestro.platform}"
+  MAX_RETRIES: "3"
+
+# Flow hooks for setup and cleanup
+onFlowStart:
+  - evalScript: "output.testStartTime = Date.now();"
+  - evalScript: "output.stepCount = 0;"
+
+onFlowComplete:
+  - evalScript: "const duration = Date.now() - output.testStartTime;"
+  - evalScript: "output.stepCount++;"
+  - takeScreenshot: "template-test-complete"
 
 ---
 # Start screen recording
@@ -11,31 +27,55 @@ tags: ["template", "example"]
     path: 'template-test'
     label: 'Template Test Recording'
 
-# Step 1: Launch the app
-- evalScript: "console.log('Step 1: Launching app...');"
-- launchApp
+# Step 1: Launch the app with state clearing
+- launchApp:
+    appId: "com.scopex.scopexmobilev2"
+    clearState: true
+    clearKeychain: true
 
 # Step 2: Wait for app to load
-- evalScript: "console.log('Step 2: Waiting for app to load...');"
-- assertVisible: "Continue"
-- evalScript: "console.log('App loaded successfully');"
+- extendedWaitUntil:
+    visible: "Continue"
+    timeout: 15000
 
-# Step 3: Your test steps here
-- evalScript: "console.log('Step 3: Performing test action...');"
+# Step 3: Navigate through onboarding (if needed)
+# Screen 1: Initial onboarding
+- assertVisible: "Continue"
+
+# Navigate to next screen
 - tapOn: "Continue"
+
+# Screen 2: Trusted by thousands
+- assertVisible: "Continue"
+
+# Navigate to next screen
+- tapOn: "Continue"
+
+# Screen 3: Designed for love
+- assertVisible: "Get Started"
+
+# Complete onboarding
+- tapOn: "Get Started"
+
+# Step 4: Your specific test steps here
+- evalScript: "console.log('Step 4: Performing test action...');"
+- extendedWaitUntil:
+    visible: "Expected Element"
+    timeout: 10000
+- tapOn: "Expected Element"
 - evalScript: "console.log('Test action completed');"
 
-# Step 4: Verify expected results
-- evalScript: "console.log('Step 4: Verifying results...');"
-- assertVisible: "Expected Element"
+# Step 5: Verify expected results
+- evalScript: "console.log('Step 5: Verifying results...');"
+- assertVisible: "Expected Result Element"
 - evalScript: "console.log('Results verified successfully');"
 
-# Step 5: Take screenshot
-- evalScript: "console.log('Step 5: Taking screenshot...');"
+# Step 6: Take screenshot
+- evalScript: "console.log('Step 6: Taking screenshot...');"
 - takeScreenshot: "template-test-complete"
 
-# Step 6: Final verification
-- evalScript: "console.log('Step 6: Final verification...');"
+# Step 7: Final verification
+- evalScript: "console.log('Step 7: Final verification...');"
 - assertTrue: "maestro.appId === 'com.scopex.scopexmobilev2'"
 - evalScript: "console.log('Template test completed successfully!');"
 

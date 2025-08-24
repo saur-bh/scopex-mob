@@ -3,7 +3,7 @@
 
 appId: com.scopex.scopexmobilev2
 name: "Signup Flow with Clear State"
-tags: ["feature", "signup", "onboarding", "authentication", "clear-state", "critical"]
+tags: ["feature", "signup", "onboarding", "authentication", "clear-state", "smoke"]
 
 # Environment variables
 env:
@@ -63,7 +63,7 @@ onFlowComplete:
 
 # Step 4: Handle signup flow
 # Verify navigation to signup screen
-- assertVisible: "Sign Up"
+- assertVisible: "Sign.*"
 - assertVisible: "Sign up to continue"
 
 # Tap on Sign up

@@ -13,9 +13,6 @@ app:
     appId: "com.scopex.scopexmobilev2"
     appPath: "apps/ios/MyApp.app"
 
-# Test output directory configuration
-testOutputDir: "reports"
-
 # Test flows with proper organization
 flows:
   - "flows/feature/*.yaml"         # All feature tests organized here
@@ -38,7 +35,6 @@ env:
 # Test configuration
 testing:
   format: "HTML"
-  output: "reports"
   verbose: true
   debug: true
 

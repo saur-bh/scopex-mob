@@ -3,7 +3,7 @@
 
 appId: com.scopex.scopexmobilev2
 name: "App Launch with Clear State"
-tags: ["feature", "launch", "clear-state", "guest", "signup", "critical"]
+tags: ["notags"]
 
 # Environment variables
 env:

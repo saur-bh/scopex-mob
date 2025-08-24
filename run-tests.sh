@@ -422,6 +422,91 @@ ensure_app_installed() {
     fi
 }
 
+# Function to ensure only the intended platform's device is available for Maestro
+ensure_platform_device_only() {
+    local platform="$1"
+    
+    print_device "Ensuring only $platform device is available for Maestro..."
+    
+    if [[ "$platform" == "ios" ]]; then
+        # Shutdown any running Android emulators to ensure Maestro picks iOS
+        local android_devices=$(adb devices 2>/dev/null | grep -v "List of devices" | grep -v "^$" | cut -f1)
+        if [[ -n "$android_devices" ]]; then
+            print_device "Shutting down Android devices to ensure iOS is used..."
+            for device_id in $android_devices; do
+                print_device "Shutting down Android device: $device_id"
+                adb -s "$device_id" emu kill >/dev/null 2>&1 || true
+            done
+            # Wait for Android devices to fully shutdown
+            sleep 5
+        fi
+        
+        # Verify iOS device is still running
+        local ios_device=$(xcrun simctl list devices 2>/dev/null | grep "Booted" | head -n 1 | cut -d'(' -f2 | cut -d')' -f1 | tr -d '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        if [[ -n "$ios_device" ]]; then
+            print_success "iOS device confirmed running: $ios_device"
+        else
+            print_error "No iOS device found after Android shutdown"
+            return 1
+        fi
+        
+    elif [[ "$platform" == "android" ]]; then
+        # Shutdown any running iOS simulators to ensure Maestro picks Android
+        local ios_devices=$(xcrun simctl list devices 2>/dev/null | grep "Booted" | cut -d'(' -f2 | cut -d')' -f1)
+        if [[ -n "$ios_devices" ]]; then
+            print_device "Shutting down iOS devices to ensure Android is used..."
+            for device_id in $ios_devices; do
+                print_device "Shutting down iOS device: $device_id"
+                xcrun simctl shutdown "$device_id" >/dev/null 2>&1 || true
+            done
+            # Wait for iOS devices to fully shutdown
+            sleep 5
+        fi
+        
+        # Verify Android device is still running
+        local android_device=$(adb devices 2>/dev/null | grep -v "List of devices" | grep -v "^$" | head -n 1 | cut -f1 | tr -d '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        if [[ -n "$android_device" ]]; then
+            print_success "Android device confirmed running: $android_device"
+        else
+            print_error "No Android device found after iOS shutdown"
+            return 1
+        fi
+    fi
+    
+    return 0
+}
+
+# Function to clean up any files left in root directory
+cleanup_root_directory() {
+    print_device "Cleaning up any remaining files in root directory..."
+    
+    # Remove any remaining media files in root directory
+    local root_files=(
+        "*.png"
+        "*.mp4"
+        "*performance*.json"
+        "*test*.log"
+        "*maestro*.log"
+    )
+    
+    for pattern in "${root_files[@]}"; do
+        for file in $pattern; do
+            if [[ -f "$file" ]] && [[ "$file" != "./apps/"* ]] && [[ "$file" != "./reports/"* ]]; then
+                rm -f "$file"
+                print_status "Cleaned up: $file"
+            fi
+        done
+    done
+    
+    # Also check for any other test-related files
+    find . -maxdepth 1 -name "*.png" -o -name "*.mp4" -o -name "*performance*.json" -o -name "*test*.log" -o -name "*maestro*.log" | while read file; do
+        if [[ -f "$file" ]] && [[ "$file" != "./apps/"* ]] && [[ "$file" != "./reports/"* ]]; then
+            rm -f "$file"
+            print_status "Cleaned up: $file"
+        fi
+    done
+}
+
 # Function to list devices
 list_devices() {
     print_device "Available devices:"
@@ -567,30 +652,72 @@ organize_test_outputs() {
     # Ensure directories exist
     mkdir -p "$output_dir/screenshots"
     mkdir -p "$output_dir/recordings"
+    mkdir -p "$output_dir/performance"
     
-    # Move screenshots from root directory and output directory
-    for file in *.png "$output_dir"/*.png; do
-        if [[ -f "$file" ]]; then
-            mv "$file" "$output_dir/screenshots/"
-            print_success "Screenshot moved: $(basename "$file")"
-        fi
+    print_device "Organizing test outputs to: $output_dir"
+    
+    # Move screenshots from multiple possible locations
+    local screenshot_locations=(
+        "*.png"
+        "$output_dir/*.png"
+        "reports/*.png"
+        "reports/screenshots/*.png"
+        "reports/recordings/*.png"
+    )
+    
+    for pattern in "${screenshot_locations[@]}"; do
+        for file in $pattern; do
+            if [[ -f "$file" ]] && [[ "$file" != "$output_dir/screenshots/"* ]]; then
+                mv "$file" "$output_dir/screenshots/"
+                print_success "Screenshot moved: $(basename "$file")"
+            fi
+        done
     done
     
-    # Move recordings from root directory and output directory
-    for file in *.mp4 "$output_dir"/*.mp4; do
-        if [[ -f "$file" ]]; then
-            mv "$file" "$output_dir/recordings/"
-            print_success "Recording moved: $(basename "$file")"
-        fi
+    # Move recordings from multiple possible locations
+    local recording_locations=(
+        "*.mp4"
+        "$output_dir/*.mp4"
+        "reports/*.mp4"
+        "reports/screenshots/*.mp4"
+        "reports/recordings/*.mp4"
+    )
+    
+    for pattern in "${recording_locations[@]}"; do
+        for file in $pattern; do
+            if [[ -f "$file" ]] && [[ "$file" != "$output_dir/recordings/"* ]]; then
+                mv "$file" "$output_dir/recordings/"
+                print_success "Recording moved: $(basename "$file")"
+            fi
+        done
     done
     
-
+    # Move performance logs from multiple possible locations
+    local performance_locations=(
+        "*performance*.json"
+        "$output_dir/*performance*.json"
+        "reports/*performance*.json"
+    )
     
-    # Move performance logs from root directory and output directory
-    for file in *performance*.json "$output_dir"/*performance*.json; do
-        if [[ -f "$file" ]]; then
-            mv "$file" "$output_dir/performance/"
-            print_success "Performance log moved: $(basename "$file")"
+    for pattern in "${performance_locations[@]}"; do
+        for file in $pattern; do
+            if [[ -f "$file" ]] && [[ "$file" != "$output_dir/performance/"* ]]; then
+                mv "$file" "$output_dir/performance/"
+                print_success "Performance log moved: $(basename "$file")"
+            fi
+        done
+    done
+    
+    # Also check for any other media files that might have been missed
+    find . -maxdepth 2 -name "*.png" -o -name "*.mp4" | while read file; do
+        if [[ -f "$file" ]] && [[ "$file" != "$output_dir/"* ]] && [[ "$file" != "./apps/"* ]] && [[ "$file" != "./reports/"* ]]; then
+            if [[ "$file" == *.png ]]; then
+                mv "$file" "$output_dir/screenshots/"
+                print_success "Screenshot moved: $(basename "$file")"
+            elif [[ "$file" == *.mp4 ]]; then
+                mv "$file" "$output_dir/recordings/"
+                print_success "Recording moved: $(basename "$file")"
+            fi
         fi
     done
 }
@@ -1076,11 +1203,20 @@ run_tests() {
         run_signup_first "$platform" "$device" "$output_dir" "$format" "$verbose" "$timeout" "$retry"
     fi
     
+    # Ensure only the intended platform's device is available for Maestro
+    if [[ -n "$platform" ]] && [[ "$platform" != "both" ]]; then
+        if ! ensure_platform_device_only "$platform"; then
+            print_error "Failed to ensure platform device availability"
+            exit 1
+        fi
+    fi
+    
     # Build maestro command
     local maestro_cmd="maestro test"
     
     # Note: Maestro doesn't support --device flag, it auto-detects devices
     # The device parameter is used for app installation only
+    # Platform selection is handled by ensuring only the intended platform's device is available
     
     # Add output directory and format
     maestro_cmd="$maestro_cmd --output '$output_dir/report.$format' --format $format"
@@ -1200,6 +1336,9 @@ run_tests() {
     
     # Organize test outputs
     organize_test_outputs "$output_dir"
+    
+    # Clean up any remaining files in root directory
+    cleanup_root_directory
     
     # Create comprehensive report
     create_comprehensive_report "$output_dir" "$test_results" "$execution_time" "$platform" "$device"

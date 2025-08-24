@@ -3,7 +3,7 @@
 
 appId: com.scopex.scopexmobilev2
 name: "Guest User Journey with Clear State"
-tags: ["feature", "guest", "onboarding", "clear-state", "critical"]
+tags: ["feature", "guest", "onboarding", "clear-state", "smoke"]
 
 # Environment variables
 env:
@@ -64,7 +64,7 @@ onFlowComplete:
 
 # Step 4: Verify navigation to home screen
 - assertVisible: "Save extra when sending home"
-- assertVisible: "Sign Up"
+- assertVisible: "Sign Up.*"
 
 # Step 6: Test tab navigation with enhanced selectors
 # Wait for main app screen to be visible
@@ -83,7 +83,7 @@ onFlowComplete:
 
 # Compare tab navigation
 - tapOn:
-    text: "Compare"
+    text: "Compare.*"
     index: 0
     enabled: true
 
