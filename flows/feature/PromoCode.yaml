@@ -1,5 +1,5 @@
-# Recipient - this is to test user can add recipient using setting
-# this is to test user can add recipient using setting
+# PromoCode - This is to test promocode feature
+# This is to test promocode feature
 
 # IMPORTANT: Use Maestro Studio to record your test steps!
 # 1. Run: maestro studio
@@ -7,8 +7,8 @@
 # 3. Copy the generated commands to replace the placeholder steps below
 
 appId: com.scopex.scopexmobilev2
-name: "Recipient"
-tags: ["in-dev"]
+name: "PromoCode"
+tags: ["smoke", "promocode", "clear-state"]
 
 # Environment variables
 env:
@@ -24,13 +24,13 @@ onFlowStart:
 onFlowComplete:
   - evalScript: "const duration = Date.now() - output.testStartTime;"
   - evalScript: "output.stepCount++;"
-  - takeScreenshot: "Recipient-complete"
+  - takeScreenshot: "PromoCode-complete"
 
 ---
 # Start screen recording
 - startRecording:
-    path: 'Recipient'
-    label: 'Recipient Recording'
+    path: 'PromoCode'
+    label: 'PromoCode Recording'
 
 # Step 1: Launch the app with state clearing
 - launchApp:
@@ -100,56 +100,39 @@ onFlowComplete:
     visible: "Send Money"
     timeout: 15000
 
-#Step 1: Open hamburger menu
-# Step 1: Open hamburger menu
-- tapOn: "header-button" # Hamburger menu icon (top-left)
-- assertVisible: "Recipients"
+# Navigate to Send Money
+- tapOn: "Send Money"
+- assertVisible: "Send Money"
 
-# Step 2: Navigate to Recipients
-- tapOn: "Recipients"
-- assertVisible: "No Recipient"
-- assertVisible: "Add NewRecipient"
+# Apply invalid promo code
+- tapOn: "Add"
+- assertVisible: "Add Promo Code"
+- tapOn: "Promo Code"
+- inputText: "INVALID123"
+- tapOn: "Unlock.*"
 
-# Step 3: Tap on Add New Recipient
-- tapOn: "Add NewRecipient"
-- assertVisible: "Add a new recipient"
-- assertVisible: "Just a few details to proceed"
+# Verify error handling
+- assertVisible: "Invalid promo code"
 
-# Step 4: Select an avatar (first one)
-- tapOn:
-    point: "22%,45%" # First avatar option
-
-# Step 5: Fill in recipient details
-- tapOn: "Nickname"
-- inputText: "John Doe"
-
-- tapOn: "IFSC Code" 
-- inputText: "SBIN0001234"
-
-- tapOn: "Account Number"
-- inputText: "1234567890123456"
-
-# Step 6: Verify all fields are filled
-- assertVisible: "John Doe"
-- assertVisible: "SBIN0001234" 
-- assertVisible: "1234567890123456"
-
-# Step 7: Complete recipient addition
-- tapOn: "Continue"
-
-- assertVisible: "John Doe"
+# Verify user can retry
+- tapOn: "Promo Code"
+- eraseText 
+- inputText: "EXPIRED"
+- tapOn: "Unlock.*"
+- assertVisible: "Invalid.*"
+#- tapOn: "close.*"
 
 # Step 8: Take screenshot
 - evalScript: "console.log('Step 8: Taking screenshot...');"
-- takeScreenshot: "Recipient-complete"
+- takeScreenshot: "PromoCode-complete"
 
 # Step 9: Final verification
 - evalScript: "console.log('Step 9: Final verification...');"
 - assertTrue: "maestro.appId === 'com.scopex.scopexmobilev2'"
-- evalScript: "console.log('Recipient test completed successfully!');"
+- evalScript: "console.log('PromoCode test completed successfully!');"
 
 # Stop recording
-- evalScript: "console.log('Recording completed - Recipient test finished');"
+- evalScript: "console.log('Recording completed - PromoCode test finished');"
 - stopRecording
 
 # ============================================================================
@@ -168,5 +151,5 @@ onFlowComplete:
 #    - Replace with your recorded commands
 #
 # 4. Test your flow:
-#    ./run-tests.sh flows/feature/Recipient.yaml
+#    ./run-tests.sh flows/feature/PromoCode.yaml
 # ============================================================================

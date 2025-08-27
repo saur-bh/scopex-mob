@@ -1,5 +1,5 @@
-# Recipient - this is to test user can add recipient using setting
-# this is to test user can add recipient using setting
+# Rewards - This is to test Rewards
+# This is to test Rewards
 
 # IMPORTANT: Use Maestro Studio to record your test steps!
 # 1. Run: maestro studio
@@ -7,8 +7,8 @@
 # 3. Copy the generated commands to replace the placeholder steps below
 
 appId: com.scopex.scopexmobilev2
-name: "Recipient"
-tags: ["in-dev"]
+name: "Rewards"
+tags: ["smoke", "clear-state"]
 
 # Environment variables
 env:
@@ -24,13 +24,13 @@ onFlowStart:
 onFlowComplete:
   - evalScript: "const duration = Date.now() - output.testStartTime;"
   - evalScript: "output.stepCount++;"
-  - takeScreenshot: "Recipient-complete"
+  - takeScreenshot: "Rewards-complete"
 
 ---
 # Start screen recording
 - startRecording:
-    path: 'Recipient'
-    label: 'Recipient Recording'
+    path: 'Rewards'
+    label: 'Rewards Recording'
 
 # Step 1: Launch the app with state clearing
 - launchApp:
@@ -100,56 +100,57 @@ onFlowComplete:
     visible: "Send Money"
     timeout: 15000
 
-#Step 1: Open hamburger menu
 # Step 1: Open hamburger menu
 - tapOn: "header-button" # Hamburger menu icon (top-left)
-- assertVisible: "Recipients"
 
-# Step 2: Navigate to Recipients
-- tapOn: "Recipients"
-- assertVisible: "No Recipient"
-- assertVisible: "Add NewRecipient"
+# Step 2: Navigate to Rewards
+- tapOn: "Rewards"
 
-# Step 3: Tap on Add New Recipient
-- tapOn: "Add NewRecipient"
-- assertVisible: "Add a new recipient"
-- assertVisible: "Just a few details to proceed"
+# Verify Rewards page loaded
+- assertVisible: "Share."
+- assertVisible: "Earn."
+- assertVisible: "Repeat."
+- assertVisible: "Get €50 every time 3 friends sign up and transact. No limits."
 
-# Step 4: Select an avatar (first one)
+# Step 3: Tap on Copy icon (next to referral code)
 - tapOn:
-    point: "22%,45%" # First avatar option
+    point: "66%,56%"
 
-# Step 5: Fill in recipient details
-- tapOn: "Nickname"
-- inputText: "John Doe"
+# # Step 4: Tap on Share icon (commented out as in original)
+# - tapOn:
+#     point: "82%,48%"
+# - assertVisible: "Share via 'Nearby Share'"
+# - assertVisible: "WhatsApp"
+# - assertVisible: "LinkedIn"
+# - assertVisible: "Instagram"
 
-- tapOn: "IFSC Code" 
-- inputText: "SBIN0001234"
+# # Close the share dialog by tapping outside or back
+# - tapOn:
+#     point: "50%,20%" # Tap on empty area to close share dialog
 
-- tapOn: "Account Number"
-- inputText: "1234567890123456"
+# Step 5: Scroll down to see more content
+- scroll
 
-# Step 6: Verify all fields are filled
-- assertVisible: "John Doe"
-- assertVisible: "SBIN0001234" 
-- assertVisible: "1234567890123456"
-
-# Step 7: Complete recipient addition
-- tapOn: "Continue"
-
-- assertVisible: "John Doe"
+# Step 6: Verify the content after scrolling
+- assertVisible: "Wondering how does this work?"
+- assertVisible: "Step 1.*"
+- assertVisible: "Step 2.*"
+- assertVisible: "Step 3.*"
+- scroll
+- assertVisible: "Step 4.*"
+- assertVisible: "Step 5.*"
 
 # Step 8: Take screenshot
 - evalScript: "console.log('Step 8: Taking screenshot...');"
-- takeScreenshot: "Recipient-complete"
+- takeScreenshot: "Rewards-complete"
 
 # Step 9: Final verification
 - evalScript: "console.log('Step 9: Final verification...');"
 - assertTrue: "maestro.appId === 'com.scopex.scopexmobilev2'"
-- evalScript: "console.log('Recipient test completed successfully!');"
+- evalScript: "console.log('Rewards test completed successfully!');"
 
 # Stop recording
-- evalScript: "console.log('Recording completed - Recipient test finished');"
+- evalScript: "console.log('Recording completed - Rewards test finished');"
 - stopRecording
 
 # ============================================================================
@@ -168,5 +169,5 @@ onFlowComplete:
 #    - Replace with your recorded commands
 #
 # 4. Test your flow:
-#    ./run-tests.sh flows/feature/Recipient.yaml
+#    ./run-tests.sh flows/feature/Rewards.yaml
 # ============================================================================
