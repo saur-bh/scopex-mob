@@ -1,5 +1,5 @@
-# Recipient - this is to test user can add recipient using setting
-# this is to test user can add recipient using setting
+# wallet - I want to check wallet feature
+# I want to check wallet feature
 
 # IMPORTANT: Use Maestro Studio to record your test steps!
 # 1. Run: maestro studio
@@ -7,8 +7,8 @@
 # 3. Copy the generated commands to replace the placeholder steps below
 
 appId: com.scopex.scopexmobilev2
-name: "Recipient"
-tags: ["in-dev"]
+name: "wallet"
+tags: ["smoke", "clear-state"]
 
 # Environment variables
 env:
@@ -24,13 +24,13 @@ onFlowStart:
 onFlowComplete:
   - evalScript: "const duration = Date.now() - output.testStartTime;"
   - evalScript: "output.stepCount++;"
-  - takeScreenshot: "Recipient-complete"
+  - takeScreenshot: "wallet-complete"
 
 ---
 # Start screen recording
 - startRecording:
-    path: 'Recipient'
-    label: 'Recipient Recording'
+    path: 'wallet'
+    label: 'wallet Recording'
 
 # Step 1: Launch the app with state clearing
 - launchApp:
@@ -100,56 +100,69 @@ onFlowComplete:
     visible: "Send Money"
     timeout: 15000
 
-#Step 1: Open hamburger menu
-- tapOn: 
-    point: "8%,8%" # Hamburger menu icon (top-left)
-- assertVisible: "Recipients"
-
-# Step 2: Navigate to Recipients
-- tapOn: "Recipients"
-- assertVisible: "No Recipient"
-- assertVisible: "Add NewRecipient"
-
-# Step 3: Tap on Add New Recipient
-- tapOn: "Add NewRecipient"
-- assertVisible: "Add a new recipient"
-- assertVisible: "Just a few details to proceed"
-
-# Step 4: Select an avatar (first one)
+# Step 6: Your specific test steps here (REPLACE WITH RECORDED COMMANDS)
+- evalScript: "console.log('Step 6: Performing test action...');"
+# Step 2: Tap on wallet from footer menu option
+- assertVisible: "Wallet"
 - tapOn:
-    point: "22%,45%" # First avatar option
+    text: "Wallet"
+    index: 0
+    enabled: true
+- assertVisible: "WALLET BALANCE"
+- assertVisible: "Top Up wallet"
+- assertVisible: "Select amount"
 
-# Step 5: Fill in recipient details
-- tapOn: "Nickname"
-- inputText: "John Doe"
+# # Step 3: Tap on €1,000 predefined value
+# - tapOn: "€1,000"
+# - assertVisible: "1000"  # Verify the amount is selected and displayed
 
-- tapOn: "IFSC Code" 
-- inputText: "SBIN0001234"
+# Step 4: Tap on Add € 1,000 button
+- tapOn: "Add € 500"
 
-- tapOn: "Account Number"
-- inputText: "1234567890123456"
+# Step 5: Observe top-up process tab
+- assertVisible: "Send 500 EUR"
+- assertVisible: "Send funds from your bank account"
+- assertVisible: "Send Now"
+- assertVisible: "Top-up process"
+- assertVisible: "Add Money Request Initiated"
+- assertVisible: "Send funds from your bank"
+- assertVisible: "Funds verification"
+- assertVisible: "Funds added to your wallet"
 
-# Step 6: Verify all fields are filled
-- assertVisible: "John Doe"
-- assertVisible: "SBIN0001234" 
-- assertVisible: "1234567890123456"
+# Verify the process steps and their status
+# - assertVisible: "20 August 2025, 07:46 PM"  # Timestamp for initiated step
+# - assertVisible: "Please use your own bank for transfer"
 
-# Step 7: Complete recipient addition
-- tapOn: "Continue"
+# Step 6: Tap on Details button and observe the details screen
+- tapOn: "Details"
+- assertVisible: "Amount"
+- assertVisible: "500 EUR"
+- assertVisible: "Currency" 
+- assertVisible: "EUR"
+- assertVisible: "Transfer Mode"
 
-- assertVisible: "John Doe"
+- assertVisible: "Send Now"
+
+# Optional: Navigate back to verify we can return to the process tab
+- tapOn: "Top-up process"
+- assertVisible: "Add Money Request Initiated"
+- assertVisible: "Send funds from your bank"
+
+
+- evalScript: "console.log('Test action completed');"
+
 
 # Step 8: Take screenshot
 - evalScript: "console.log('Step 8: Taking screenshot...');"
-- takeScreenshot: "Recipient-complete"
+- takeScreenshot: "wallet-complete"
 
 # Step 9: Final verification
 - evalScript: "console.log('Step 9: Final verification...');"
 - assertTrue: "maestro.appId === 'com.scopex.scopexmobilev2'"
-- evalScript: "console.log('Recipient test completed successfully!');"
+- evalScript: "console.log('wallet test completed successfully!');"
 
 # Stop recording
-- evalScript: "console.log('Recording completed - Recipient test finished');"
+- evalScript: "console.log('Recording completed - wallet test finished');"
 - stopRecording
 
 # ============================================================================
@@ -168,5 +181,5 @@ onFlowComplete:
 #    - Replace with your recorded commands
 #
 # 4. Test your flow:
-#    ./run-tests.sh flows/feature/Recipient.yaml
+#    ./run-tests.sh flows/feature/wallet.yaml
 # ============================================================================

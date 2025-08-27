@@ -8,7 +8,7 @@
 
 appId: com.scopex.scopexmobilev2
 name: "test"
-tags: ["add customer"]
+tags: ["template"]
 
 # Environment variables
 env:
