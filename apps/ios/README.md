@@ -36,7 +36,7 @@ This app bundle will be used by Maestro as configured in `maestro.yaml`:
 ```yaml
 app:
   ios:
-    appId: "com.scopex.scopexmobilev2"
+    appId: "com.scopex.scopexmobile"
     appPath: "apps/ios/MyApp.app"
 ```
 

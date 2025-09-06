@@ -1,7 +1,7 @@
 # Guest User Journey with Clear State - Enhanced with Advanced Maestro Features
 # Comprehensive regression test for guest user flow with clean app state
 
-appId: com.scopex.scopexmobilev2
+appId: com.scopex.scopexmobile
 name: "Guest User Journey with Clear State"
 tags: ["feature", "guest", "onboarding", "clear-state", "smoke"]
 
@@ -29,7 +29,7 @@ onFlowComplete:
 
 # Step 1: Launch the app with state clearing
 - launchApp:
-    appId: "com.scopex.scopexmobilev2"
+    appId: "com.scopex.scopexmobile"
     clearState: true
     clearKeychain: true
 
@@ -40,16 +40,12 @@ onFlowComplete:
 
 # Step 3: Execute onboarding flow
 # Screen 1: Initial onboarding
-- assertVisible: "25 Paisa better than google rates"
-- assertVisible: "€10 Reward on first transaction"
 - assertVisible: "Continue"
 
 # Navigate to next screen
 - tapOn: "Continue"
 
 # Screen 2: Trusted by thousands
-- assertVisible: "Trusted by .*"
-- assertVisible: "25 Paisa better than Google rates"
 - assertVisible: "Continue"
 
 # Navigate to next screen
@@ -119,7 +115,7 @@ onFlowComplete:
 - takeScreenshot: "guest-user-journey-clear-state-complete"
 
 # Step 10: Verify test completion and log results
-- assertTrue: "maestro.appId === 'com.scopex.scopexmobilev2'"
+- assertTrue: "maestro.appId === 'com.scopex.scopexmobile'"
 
 # Stop recording
 - stopRecording

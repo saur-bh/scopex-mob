@@ -179,10 +179,10 @@ version: "2.0.0"
 # App configuration
 app:
   android:
-    appId: "com.scopex.scopexmobilev2"
+    appId: "com.scopex.scopexmobile"
     apkPath: "apps/android/app-release.apk"
   ios:
-    appId: "com.scopex.scopexmobilev2"
+    appId: "com.scopex.scopexmobile"
     appPath: "apps/ios/MyApp.app"
 
 # Test output directory

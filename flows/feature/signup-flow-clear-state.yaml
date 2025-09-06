@@ -1,7 +1,7 @@
 # Signup Flow with Clear State - Comprehensive User Registration
 # Handles onboarding and signup with clean app state
 
-appId: com.scopex.scopexmobilev2
+appId: com.scopex.scopexmobile
 name: "Signup Flow with Clear State"
 tags: ["feature", "signup", "onboarding", "authentication", "clear-state", "smoke"]
 
@@ -30,7 +30,7 @@ onFlowComplete:
 
 # Step 1: Launch the app with state clearing
 - launchApp:
-    appId: "com.scopex.scopexmobilev2"
+    appId: "com.scopex.scopexmobile"
     clearState: true
     clearKeychain: true
 
@@ -103,7 +103,7 @@ onFlowComplete:
 - takeScreenshot: "signup-flow-clear-state-complete"
 
 # Step 7: Final verification
-- assertTrue: "maestro.appId === 'com.scopex.scopexmobilev2'"
+- assertTrue: "maestro.appId === 'com.scopex.scopexmobile'"
 
 # Stop recording
 - stopRecording

@@ -39,7 +39,7 @@ mobile-automation-scopex/
 ### 2. Maestro Flow Structure
 ```yaml
 # Required metadata
-appId: com.scopex.scopexmobilev2
+appId: com.scopex.scopexmobile
 name: "Descriptive Test Name"
 tags: ["category", "specific-feature"]
 

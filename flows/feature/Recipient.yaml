@@ -6,9 +6,9 @@
 # 2. Record your test actions
 # 3. Copy the generated commands to replace the placeholder steps below
 
-appId: com.scopex.scopexmobilev2
+appId: com.scopex.scopexmobile
 name: "Recipient"
-tags: ["in-dev"]
+tags: ["smoke", "clear-state"]
 
 # Environment variables
 env:
@@ -34,7 +34,7 @@ onFlowComplete:
 
 # Step 1: Launch the app with state clearing
 - launchApp:
-    appId: "com.scopex.scopexmobilev2"
+    appId: "com.scopex.scopexmobile"
     clearState: true
     clearKeychain: true
 
@@ -80,8 +80,7 @@ onFlowComplete:
 - inputText: "teshank.2137@gmail.com"
 
 # Tap Next
-- tapOn: "Next"
-- tapOn: "Next"
+- tapOn: "Continue"
 
 # Handle OTP flow
 - tapOn: "Login with code"
@@ -102,7 +101,9 @@ onFlowComplete:
 
 #Step 1: Open hamburger menu
 # Step 1: Open hamburger menu
-- tapOn: "header-button" # Hamburger menu icon (top-left)
+- tapOn:
+    id: header-button
+    index: 0
 - assertVisible: "Recipients"
 
 # Step 2: Navigate to Recipients
@@ -145,7 +146,7 @@ onFlowComplete:
 
 # Step 9: Final verification
 - evalScript: "console.log('Step 9: Final verification...');"
-- assertTrue: "maestro.appId === 'com.scopex.scopexmobilev2'"
+- assertTrue: "maestro.appId === 'com.scopex.scopexmobile'"
 - evalScript: "console.log('Recipient test completed successfully!');"
 
 # Stop recording

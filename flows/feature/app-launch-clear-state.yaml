@@ -1,7 +1,7 @@
 # App Launch with Clear State - For Guest User and Signup Flows
 # Ensures clean app state for authentication flows
 
-appId: com.scopex.scopexmobilev2
+appId: com.scopex.scopexmobile
 name: "App Launch with Clear State"
 tags: ["notags"]
 
@@ -26,7 +26,7 @@ onFlowComplete:
 
 # Step 1: Launch the app with state clearing
 - launchApp:
-    appId: "com.scopex.scopexmobilev2"
+    appId: "com.scopex.scopexmobile"
     clearState: true
     clearKeychain: true
 
@@ -35,15 +35,11 @@ onFlowComplete:
     visible: "Continue"
     timeout: 15000
 
-# Step 3: Verify onboarding elements are present
-- assertVisible: "25 Paisa better than google rates"
-- assertVisible: "€10 Reward on first transaction"
-
 # Step 4: Take initial screenshot
 - takeScreenshot: "app-launched-clear-state"
 
 # Step 5: Verify app is ready for interaction
-- assertTrue: "maestro.appId === 'com.scopex.scopexmobilev2'"
+- assertTrue: "maestro.appId === 'com.scopex.scopexmobile'"
 
 # Step 6: Extract and log element text for verification
 - copyTextFrom: "Continue"

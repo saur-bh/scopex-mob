@@ -258,7 +258,7 @@ ensure_device_running() {
 check_app_installed() {
     local platform="$1"
     local device_id="$2"
-    local app_id="com.scopex.scopexmobilev2"
+    local app_id="com.scopex.scopexmobile"
     
     if [[ "$platform" == "android" ]]; then
         if adb -s "$device_id" shell pm list packages | grep -q "$app_id"; then
@@ -277,7 +277,7 @@ check_app_installed() {
 uninstall_app() {
     local platform="$1"
     local device_id="$2"
-    local app_id="com.scopex.scopexmobilev2"
+    local app_id="com.scopex.scopexmobile"
     
     print_device "Uninstalling app from $platform device: $device_id"
     
@@ -374,7 +374,7 @@ install_app() {
 verify_app_installation() {
     local platform="$1"
     local device_id="$2"
-    local app_id="com.scopex.scopexmobilev2"
+    local app_id="com.scopex.scopexmobile"
     
     print_device "Verifying app installation on $platform device..."
     
@@ -781,6 +781,117 @@ run_signup_first() {
     sleep 2
 }
 
+# Function to get media files for a specific flow
+get_flow_media() {
+    local output_dir="$1"
+    local flow_name="$2"
+    local media_html=""
+    
+    # Extract base flow name from various formats
+    # Handle formats like "App Launch without Clear State (20s)" -> "app-launch"
+    local clean_flow_name=$(echo "$flow_name" | sed 's/\.yaml$//' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-\|-$//g')
+    
+    # Create multiple matching patterns for better file matching
+    local flow_patterns=()
+    flow_patterns+=("$clean_flow_name")
+    
+    # Add pattern without timing info (remove numbers and common suffixes)
+    local base_pattern=$(echo "$clean_flow_name" | sed 's/-[0-9]*s$//' | sed 's/-without-clear-state/-no-clear-state/' | sed 's/-with-clear-state/-clear-state/')
+    flow_patterns+=("$base_pattern")
+    
+    # Add pattern with just the main action words
+       if [[ "$flow_name" == *"app"* && "$flow_name" == *"launch"* ]]; then
+           flow_patterns+=("app-launch")
+           flow_patterns+=("app-launch-no-clear-state")
+           flow_patterns+=("app-launch-clear-state")
+           flow_patterns+=("app-launch-no-clear-state-complete")
+           flow_patterns+=("app-launch-clear-state-complete")
+       fi
+    
+    # Look for screenshots matching this flow
+    local flow_screenshots=""
+    if [[ -d "$output_dir/screenshots" ]]; then
+        for screenshot in "$output_dir/screenshots"/*.png; do
+            if [[ -f "$screenshot" ]]; then
+                local filename=$(basename "$screenshot")
+                local screenshot_flow=$(echo "$filename" | sed 's/\.png$//' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-\|-$//g')
+                
+                # Check if screenshot matches any of our patterns
+                local matched=false
+                for pattern in "${flow_patterns[@]}"; do
+                    if [[ "$screenshot_flow" == *"$pattern"* ]] || [[ "$pattern" == *"$screenshot_flow"* ]]; then
+                        matched=true
+                        break
+                    fi
+                done
+                
+                # Debug output (remove after testing)
+                echo "[DEBUG] Screenshot: $filename -> $screenshot_flow" >&2
+                echo "[DEBUG] Patterns: ${flow_patterns[*]}" >&2
+                echo "[DEBUG] Matched: $matched" >&2
+                
+                if [[ "$matched" == "true" ]]; then
+                    local display_name=$(echo "$filename" | sed 's/\.png$//' | sed 's/-/ /g' | sed 's/_/ /g')
+                    flow_screenshots="$flow_screenshots
+                    <div class='inline-media-item'>
+                        <a href='screenshots/$filename' target='_blank' class='inline-media-link'>
+                            <img src='screenshots/$filename' alt='$display_name' class='inline-media-thumbnail'>
+                            <span class='inline-media-label'>📸 $display_name</span>
+                        </a>
+                    </div>"
+                fi
+            fi
+        done
+    fi
+    
+    # Look for recordings matching this flow
+    local flow_recordings=""
+    if [[ -d "$output_dir/recordings" ]]; then
+        for recording in "$output_dir/recordings"/*.mp4; do
+            if [[ -f "$recording" ]]; then
+                local filename=$(basename "$recording")
+                local recording_flow=$(echo "$filename" | sed 's/\.mp4$//' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-\|-$//g')
+                
+                # Check if recording matches any of our patterns
+                local matched=false
+                for pattern in "${flow_patterns[@]}"; do
+                    if [[ "$recording_flow" == *"$pattern"* ]] || [[ "$pattern" == *"$recording_flow"* ]]; then
+                        matched=true
+                        break
+                    fi
+                done
+                
+                if [[ "$matched" == "true" ]]; then
+                    local display_name=$(echo "$filename" | sed 's/\.mp4$//' | sed 's/-/ /g' | sed 's/_/ /g')
+                    flow_recordings="$flow_recordings
+                    <div class='inline-media-item'>
+                        <a href='recordings/$filename' target='_blank' class='inline-media-link'>
+                            <video class='inline-media-thumbnail' muted>
+                                <source src='recordings/$filename' type='video/mp4'>
+                            </video>
+                            <span class='inline-media-label'>🎥 $display_name</span>
+                        </a>
+                    </div>"
+                fi
+            fi
+        done
+    fi
+    
+    # Combine media if found
+    if [[ -n "$flow_screenshots" ]] || [[ -n "$flow_recordings" ]]; then
+        media_html="
+        <div class='flow-media mt-4'>
+            <h5 class='text-sm font-semibold mb-2 text-gray-700'>📱 Test Media:</h5>
+            <div class='inline-media-grid'>
+                $flow_screenshots
+                $flow_recordings
+            </div>
+        </div>"
+    fi
+    
+    echo "$media_html"
+}
+
 # Function to create comprehensive test report with Tailwind CSS
 create_comprehensive_report() {
     local output_dir="$1"
@@ -805,6 +916,7 @@ create_comprehensive_report() {
             ((total_flows++))
             local flow_name=$(echo "$line" | sed 's/.*\[Passed\] \(.*\) (.*/\1/')
             local duration=$(echo "$line" | sed 's/.*(\(.*\))/\1/')
+            local flow_media=$(get_flow_media "$output_dir" "$flow_name")
             flow_details="$flow_details
             <div class='flow-item passed' data-flow='$flow_name'>
                 <div class='flow-header'>
@@ -814,6 +926,7 @@ create_comprehensive_report() {
                 </div>
                 <div class='flow-details'>
                     <p class='text-green-600'>Flow executed successfully</p>
+                    $flow_media
                 </div>
             </div>"
         elif [[ $line =~ \[Failed\] ]]; then
@@ -822,6 +935,7 @@ create_comprehensive_report() {
             local flow_name=$(echo "$line" | sed 's/.*\[Failed\] \(.*\) (.*/\1/')
             local duration=$(echo "$line" | sed 's/.*(\(.*\))/\1/')
             local error=$(echo "$line" | sed 's/.*(\(.*\))/\1/' | sed 's/.*) (\(.*\))/\1/')
+            local flow_media=$(get_flow_media "$output_dir" "$flow_name")
             flow_details="$flow_details
             <div class='flow-item failed' data-flow='$flow_name'>
                 <div class='flow-header'>
@@ -849,6 +963,7 @@ create_comprehensive_report() {
                                 <li>Check device connectivity</li>
                         </ul>
                     </div>
+                    $flow_media
                 </div>
             </div>
             </div>"
@@ -861,43 +976,7 @@ create_comprehensive_report() {
         success_rate=$((passed_flows * 100 / total_flows))
     fi
     
-    # Get media files
-    local screenshots=""
-    local recordings=""
-    
-    if [[ -d "$output_dir/screenshots" ]]; then
-        for screenshot in "$output_dir/screenshots"/*.png; do
-            if [[ -f "$screenshot" ]]; then
-                local filename=$(basename "$screenshot")
-                local test_name=$(echo "$filename" | sed 's/\.png$//' | sed 's/-/ /g' | sed 's/_/ /g')
-                screenshots="$screenshots
-                <div class='media-item'>
-                    <a href='screenshots/$filename' target='_blank' class='media-link'>
-                        <img src='screenshots/$filename' alt='$test_name' class='media-thumbnail'>
-                        <span class='media-label'>📸 $test_name</span>
-                    </a>
-                </div>"
-            fi
-        done
-    fi
-    
-    if [[ -d "$output_dir/recordings" ]]; then
-        for recording in "$output_dir/recordings"/*.mp4; do
-            if [[ -f "$recording" ]]; then
-                local filename=$(basename "$recording")
-                local test_name=$(echo "$filename" | sed 's/\.mp4$//' | sed 's/-/ /g' | sed 's/_/ /g')
-                recordings="$recordings
-                <div class='media-item'>
-                    <a href='recordings/$filename' target='_blank' class='media-link'>
-                        <video class='media-thumbnail' muted>
-                            <source src='recordings/$filename' type='video/mp4'>
-                        </video>
-                        <span class='media-label'>🎥 $test_name</span>
-                    </a>
-                </div>"
-            fi
-        done
-    fi
+
     
     # Create comprehensive HTML report
     cat > "$report_file" << EOF
@@ -929,12 +1008,19 @@ create_comprehensive_report() {
         .media-thumbnail { width: 100%; height: 120px; object-fit: cover; border-radius: 0.5rem; }
         .media-link { display: block; text-decoration: none; color: inherit; }
         .media-link:hover { transform: scale(1.05); transition: transform 0.2s ease; }
+        .inline-media-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; margin-top: 0.5rem; }
+        .inline-media-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 0.5rem; transition: all 0.2s ease; }
+        .inline-media-item:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .inline-media-link { display: block; text-decoration: none; color: inherit; }
+        .inline-media-thumbnail { width: 100%; height: 80px; object-fit: cover; border-radius: 0.375rem; margin-bottom: 0.25rem; }
+        .inline-media-label { display: block; font-size: 0.75rem; font-weight: 500; color: #64748b; text-align: center; }
+        .flow-media { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 0.5rem; padding: 0.75rem; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         .nav-tab { cursor: pointer; padding: 0.75rem 1.5rem; border-bottom: 2px solid transparent; }
         .nav-tab.active { border-bottom-color: #1e40af; color: #1e40af; font-weight: 600; }
         .flow-details { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
-        .flow-item.expanded .flow-details { max-height: 500px; }
+        .flow-item.expanded .flow-details { max-height: 800px; }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -1021,7 +1107,6 @@ create_comprehensive_report() {
                 <nav class="flex space-x-8 px-6">
                     <div class="nav-tab active" onclick="showTab('overview')">📊 Overview</div>
                     <div class="nav-tab" onclick="showTab('flows')">🔄 Test Flows</div>
-                    <div class="nav-tab" onclick="showTab('media')">📸 Media Files</div>
                     <div class="nav-tab" onclick="showTab('logs')">📝 Detailed Logs</div>
                 </nav>
             </div>
@@ -1096,26 +1181,7 @@ create_comprehensive_report() {
                     </div>
                 </div>
                 
-                <!-- Media Files Tab -->
-                <div id="media" class="tab-content">
-                    <h3 class="text-xl font-semibold mb-6">📸 Test Media Files</h3>
-                    
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <div>
-                            <h4 class="text-lg font-semibold mb-4 text-blue-600">📸 Screenshots</h4>
-                            <div class="grid grid-cols-2 gap-4">
-                                $screenshots
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <h4 class="text-lg font-semibold mb-4 text-green-600">🎥 Recordings</h4>
-                            <div class="grid grid-cols-2 gap-4">
-                                $recordings
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
                 
                 <!-- Logs Tab -->
                 <div id="logs" class="tab-content">
@@ -1637,9 +1703,9 @@ main() {
                 print_device "Installing Android app on device: $device"
                 
                 # Uninstall if exists
-                if adb -s "$device" shell pm list packages | grep -q "com.scopex.scopexmobilev2" 2>/dev/null; then
+                if adb -s "$device" shell pm list packages | grep -q "com.scopex.scopexmobile" 2>/dev/null; then
                     print_device "Uninstalling existing app..."
-                    adb -s "$device" uninstall com.scopex.scopexmobilev2 >/dev/null 2>&1
+                    adb -s "$device" uninstall com.scopex.scopexmobile >/dev/null 2>&1
                     sleep 2
                 fi
                 
@@ -1660,9 +1726,9 @@ main() {
                 print_device "Installing iOS app on device: $device"
                 
                 # Uninstall if exists
-                if xcrun simctl listapps "$device" | grep -q "com.scopex.scopexmobilev2" 2>/dev/null; then
+                if xcrun simctl listapps "$device" | grep -q "com.scopex.scopexmobile" 2>/dev/null; then
                     print_device "Uninstalling existing app..."
-                    xcrun simctl uninstall "$device" com.scopex.scopexmobilev2 >/dev/null 2>&1
+                    xcrun simctl uninstall "$device" com.scopex.scopexmobile >/dev/null 2>&1
                     sleep 2
                 fi
                 
@@ -1733,9 +1799,9 @@ main() {
                     print_device "Installing Android app on device: $device_id"
                     
                     # Uninstall if exists
-                    if adb -s "$device_id" shell pm list packages | grep -q "com.scopex.scopexmobilev2" 2>/dev/null; then
+                    if adb -s "$device_id" shell pm list packages | grep -q "com.scopex.scopexmobile" 2>/dev/null; then
                         print_device "Uninstalling existing app..."
-                        adb -s "$device_id" uninstall com.scopex.scopexmobilev2 >/dev/null 2>&1
+                        adb -s "$device_id" uninstall com.scopex.scopexmobile >/dev/null 2>&1
                         sleep 2
                     fi
                     
@@ -1780,9 +1846,9 @@ main() {
                     print_device "Installing iOS app on device: $device_id"
                     
                     # Uninstall if exists
-                    if xcrun simctl listapps "$device_id" | grep -q "com.scopex.scopexmobilev2" 2>/dev/null; then
+                    if xcrun simctl listapps "$device_id" | grep -q "com.scopex.scopexmobile" 2>/dev/null; then
                         print_device "Uninstalling existing app..."
-                        xcrun simctl uninstall "$device_id" com.scopex.scopexmobilev2 >/dev/null 2>&1
+                        xcrun simctl uninstall "$device_id" com.scopex.scopexmobile >/dev/null 2>&1
                         sleep 2
                     fi
                     
@@ -1857,9 +1923,9 @@ main() {
                     print_device "Installing Android app on device: $device"
                     
                     # Uninstall if exists
-                    if adb -s "$device" shell pm list packages | grep -q "com.scopex.scopexmobilev2" 2>/dev/null; then
+                    if adb -s "$device" shell pm list packages | grep -q "com.scopex.scopexmobile" 2>/dev/null; then
                         print_device "Uninstalling existing app..."
-                        adb -s "$device" uninstall com.scopex.scopexmobilev2 >/dev/null 2>&1
+                        adb -s "$device" uninstall com.scopex.scopexmobile >/dev/null 2>&1
                         sleep 2
                     fi
                     
@@ -1905,9 +1971,9 @@ main() {
                     print_device "Installing iOS app on device: $device"
                     
                     # Uninstall if exists
-                    if xcrun simctl listapps "$device" | grep -q "com.scopex.scopexmobilev2" 2>/dev/null; then
+                    if xcrun simctl listapps "$device" | grep -q "com.scopex.scopexmobile" 2>/dev/null; then
                         print_device "Uninstalling existing app..."
-                        xcrun simctl uninstall "$device" com.scopex.scopexmobilev2 >/dev/null 2>&1
+                        xcrun simctl uninstall "$device" com.scopex.scopexmobile >/dev/null 2>&1
                         sleep 2
                     fi
                     

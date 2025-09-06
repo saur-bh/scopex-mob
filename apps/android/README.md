@@ -33,7 +33,7 @@ This APK will be used by Maestro as configured in `maestro.yaml`:
 ```yaml
 app:
   android:
-    appId: "com.scopex.scopexmobilev2"
+    appId: "com.scopex.scopexmobile"
     apkPath: "apps/android/app-release.apk"
 ```
 

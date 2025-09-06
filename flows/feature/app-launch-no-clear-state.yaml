@@ -1,7 +1,7 @@
 # App Launch without Clear State - For Post-Signup Flows
 # Launches app without clearing state for authenticated user flows
 
-appId: com.scopex.scopexmobilev2
+appId: com.scopex.scopexmobile
 name: "App Launch without Clear State"
 tags: ["notags"]
 
@@ -26,7 +26,7 @@ onFlowComplete:
 
 # Step 1: Launch the app without state clearing
 - launchApp:
-    appId: "com.scopex.scopexmobilev2"
+    appId: "com.scopex.scopexmobile"
     clearState: false
     clearKeychain: false
 
@@ -43,7 +43,7 @@ onFlowComplete:
 - takeScreenshot: "app-launched-no-clear-state"
 
 # Step 5: Verify app is ready for interaction
-- assertTrue: "maestro.appId === 'com.scopex.scopexmobilev2'"
+- assertTrue: "maestro.appId === 'com.scopex.scopexmobile'"
 
 # Step 6: Extract and log element text for verification
 - copyTextFrom: "Send Money"
