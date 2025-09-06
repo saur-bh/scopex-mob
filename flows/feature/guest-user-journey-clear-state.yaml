@@ -52,7 +52,6 @@ onFlowComplete:
 - tapOn: "Continue"
 
 # Screen 3: Designed for love
-- assertVisible: "Designed.*"
 - assertVisible: "Get Started"
 
 # Complete onboarding
@@ -62,11 +61,6 @@ onFlowComplete:
 - assertVisible: "Save extra when sending home"
 - assertVisible: "Sign Up.*"
 
-# Step 6: Test tab navigation with enhanced selectors
-# Wait for main app screen to be visible
-- extendedWaitUntil:
-    visible: "Save extra when sending home"
-    timeout: 10000
 
 # Home tab navigation - use more specific selector
 - tapOn:

@@ -81,6 +81,7 @@ onFlowComplete:
 
 # Tap Next
 - tapOn: "Continue"
+- tapOn: "Continue"
 
 # Handle OTP flow
 - tapOn: "Login with code"
@@ -91,8 +92,8 @@ onFlowComplete:
 - inputText: "000000"
 
 # Complete OTP verification
-- tapOn: "Next"
-- tapOn: "Next"
+- tapOn: "Verify"
+- tapOn: "Verify"
 
 # Step 5: Verify successful signup
 - extendedWaitUntil:
