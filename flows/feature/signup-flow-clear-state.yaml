@@ -9,8 +9,8 @@ tags: ["feature", "signup", "onboarding", "authentication", "clear-state", "smok
 env:
   TEST_START_TIME: "${Date.now()}"
   PLATFORM: "${maestro.platform}"
-  USER_EMAIL: "teshank.2137@gmail.com"
-  USER_OTP: "000000"
+  USER_EMAIL: "${USER_EMAIL:-teshank.2137@gmail.com}"
+  USER_OTP: "${USER_OTP:-000000}"
 
 # Flow hooks for setup and cleanup
 onFlowStart:
@@ -64,7 +64,9 @@ onFlowComplete:
 # Step 4: Handle signup flow
 # Verify navigation to signup screen
 - assertVisible: "Sign.*"
-- assertVisible: "Sign up to continue"
+- extendedWaitUntil:
+    visible: "Sign up to continue"
+    timeout: 10000
 
 # Tap on Sign up
 - tapOn: "Sign up to continue"
@@ -76,7 +78,7 @@ onFlowComplete:
 
 # Enter email
 - tapOn: "Email"
-- inputText: "teshank.2137@gmail.com"
+- inputText: "${USER_EMAIL}"
 
 # Tap Next
 - tapOn: "Verify"
@@ -87,7 +89,7 @@ onFlowComplete:
 # Enter OTP
 - tapOn:
     point: "11%,41%"
-- inputText: "000000"
+- inputText: "${USER_OTP}"
 
 # Complete OTP verification
 - tapOn: "Verify"

@@ -1,36 +1,24 @@
-# test - Test flow for test
-# Test flow for test
-
-# IMPORTANT: Use Maestro Studio to record your test steps!
-# 1. Run: maestro studio
-# 2. Record your test actions
-# 3. Copy the generated commands to replace the placeholder steps below
-
 appId: com.scopex.scopexmobile
-name: "test"
-tags: ["template"]
+name: "Template Flow"
+tags: ["feature", "template"]
 
-# Environment variables
 env:
   TEST_START_TIME: "${Date.now()}"
   PLATFORM: "${maestro.platform}"
   MAX_RETRIES: "3"
 
-# Flow hooks for setup and cleanup
 onFlowStart:
-  - evalScript: "output.testStartTime = Date.now();"
-  - evalScript: "output.stepCount = 0;"
+  - evalScript: "console.log('Starting Template Flow'); output.testStartTime = Date.now(); output.stepCount = 0;"
 
 onFlowComplete:
-  - evalScript: "const duration = Date.now() - output.testStartTime;"
-  - evalScript: "output.stepCount++;"
-  - takeScreenshot: "test-complete"
+  - evalScript: "const durationMs = Date.now() - output.testStartTime; console.log(`Template Flow duration: ${durationMs}ms`);"
+  - takeScreenshot: "template-flow-complete"
 
 ---
 # Start screen recording
 - startRecording:
-    path: 'test'
-    label: 'test Recording'
+    path: 'template-flow'
+    label: 'Template Flow Recording'
 
 # Step 1: Launch the app with state clearing
 - launchApp:
@@ -45,27 +33,37 @@ onFlowComplete:
 
 # Step 3: Navigate through onboarding
 # Screen 1: Initial onboarding
-- assertVisible: "Continue"
+- extendedWaitUntil:
+    visible: "Continue"
+    timeout: 10000
 
 # Navigate to next screen
 - tapOn: "Continue"
 
 # Screen 2: Trusted by thousands
-- assertVisible: "Continue"
+- extendedWaitUntil:
+    visible: "Continue"
+    timeout: 10000
 
 # Navigate to next screen
 - tapOn: "Continue"
 
 # Screen 3: Designed for love
-- assertVisible: "Get Started"
+- extendedWaitUntil:
+    visible: "Get Started"
+    timeout: 10000
 
 # Complete onboarding
 - tapOn: "Get Started"
 
 # Step 4: Handle signup flow
 # Verify navigation to signup screen
-- assertVisible: "Sign.*"
-- assertVisible: "Sign up to continue"
+- extendedWaitUntil:
+    visible: "Sign.*"
+    timeout: 10000
+- extendedWaitUntil:
+    visible: "Sign up to continue"
+    timeout: 10000
 
 # Tap on Sign up
 - tapOn: "Sign up to continue"
@@ -77,7 +75,7 @@ onFlowComplete:
 
 # Enter email
 - tapOn: "Email"
-- inputText: "teshank.2137@gmail.com"
+- inputText: "${USER_EMAIL:-test@example.com}"
 
 # Tap Next
 - tapOn: "Continue"
@@ -88,7 +86,7 @@ onFlowComplete:
 # Enter OTP
 - tapOn:
     point: "11%,41%"
-- inputText: "000000"
+- inputText: "${USER_OTP:-000000}"
 
 # Complete OTP verification
 - tapOn: "Verify"
@@ -101,30 +99,22 @@ onFlowComplete:
     timeout: 15000
 
 # Step 6: Your specific test steps here (REPLACE WITH RECORDED COMMANDS)
-- evalScript: "console.log('Step 6: Performing test action...');"
-# TODO: Replace with commands recorded from Maestro Studio
-# Example:
-# - tapOn: "Your Element"
-# - inputText: "Your Text"
-# - assertVisible: "Expected Result"
-- evalScript: "console.log('Test action completed');"
+- evalScript: "console.log('Step 6: Placeholder for recorded commands');"
 
 # Step 7: Verify expected results
-- evalScript: "console.log('Step 7: Verifying results...');"
-- assertVisible: "Expected Result Element"
-- evalScript: "console.log('Results verified successfully');"
+- evalScript: "console.log('Step 7: Add your assertions here');"
 
 # Step 8: Take screenshot
 - evalScript: "console.log('Step 8: Taking screenshot...');"
-- takeScreenshot: "test-complete"
+- takeScreenshot: "template-flow-complete"
 
 # Step 9: Final verification
 - evalScript: "console.log('Step 9: Final verification...');"
 - assertTrue: "maestro.appId === 'com.scopex.scopexmobile'"
-- evalScript: "console.log('test test completed successfully!');"
+- evalScript: "console.log('Template flow completed successfully!');"
 
 # Stop recording
-- evalScript: "console.log('Recording completed - test test finished');"
+- evalScript: "console.log('Recording completed - Template Flow finished');"
 - stopRecording
 
 # ============================================================================
@@ -143,5 +133,5 @@ onFlowComplete:
 #    - Replace with your recorded commands
 #
 # 4. Test your flow:
-#    ./run-tests.sh flows/feature/test.yaml
+#    ./run-tests.sh flows/feature/template-flow.yaml
 # ============================================================================
