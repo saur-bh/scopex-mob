@@ -233,7 +233,7 @@ generate_flow_content() {
             echo ""
             echo "# Enter email"
             echo "- tapOn: \"Email\""
-            echo "- inputText: \"teshank.2137@gmail.com\""
+            echo "- inputText: \"scopexverifieduser@yopmail.com\""
             echo ""
             echo "# Tap Next"
             echo "- tapOn: \"Continue\""

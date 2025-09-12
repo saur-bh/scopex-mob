@@ -76,6 +76,7 @@ show_usage() {
     echo "  --parallel                   Run tests in parallel"
     echo ""
     echo "Examples:"
+    echo "  $0                                          # Auto-detect platform, close existing devices, start new device, install app, run tests"
     echo "  $0 --start-device android                    # Start Android device"
     echo "  $0 --clean-reports                          # Force clean all reports"
     echo "  $0 -p android -t \"guest,clear-state\"        # Auto device + app install + run tests"
@@ -90,9 +91,11 @@ show_usage() {
     echo "  No clear state flows: app-launch-no-clear-state.yaml, send-money-flow.yaml, wallet-flow.yaml"
     echo ""
     echo "Auto Device Management:"
-    echo "  Automatically starts device if not running"
+    echo "  Automatically detects and uses running devices (prefers Android)"
+    echo "  Closes existing devices before starting new ones for clean state"
+    echo "  Automatically starts device if none running (tries Android first, then iOS)"
     echo "  Automatically installs app if not installed"
-    echo "  Platform selection prompt if not specified"
+    echo "  No interactive prompts - fully automated"
     echo ""
     echo "Flow Dependencies:"
     echo "  Regression tests automatically run signup flow first"
@@ -420,6 +423,39 @@ ensure_app_installed() {
         print_error "Failed to install app"
         return 1
     fi
+}
+
+# Function to close all running devices
+close_all_devices() {
+    print_device "Closing all running devices for clean start..."
+    
+    # Close Android devices
+    if command_exists adb; then
+        local android_devices=$(adb devices 2>/dev/null | grep -v "List of devices" | grep -v "^$" | cut -f1)
+        if [[ -n "$android_devices" ]]; then
+            print_device "Closing Android devices..."
+            for device_id in $android_devices; do
+                print_device "Closing Android device: $device_id"
+                adb -s "$device_id" emu kill >/dev/null 2>&1 || true
+            done
+        fi
+    fi
+    
+    # Close iOS devices (macOS only)
+    if [[ "$OSTYPE" == "darwin"* ]] && command_exists xcrun; then
+        local ios_devices=$(xcrun simctl list devices 2>/dev/null | grep "Booted" | cut -d'(' -f2 | cut -d')' -f1)
+        if [[ -n "$ios_devices" ]]; then
+            print_device "Closing iOS devices..."
+            for device_id in $ios_devices; do
+                print_device "Closing iOS device: $device_id"
+                xcrun simctl shutdown "$device_id" >/dev/null 2>&1 || true
+            done
+        fi
+    fi
+    
+    # Wait for devices to fully shutdown
+    sleep 5
+    print_success "All devices closed"
 }
 
 # Function to ensure only the intended platform's device is available for Maestro
@@ -1315,10 +1351,10 @@ run_tests() {
         print_test "Verbose output enabled"
     fi
     
-    # Add timeout
+    # Note: Maestro doesn't support --timeout option directly
+    # Timeout is handled at the flow level in individual YAML files
     if [[ -n "$timeout" ]]; then
-        maestro_cmd="$maestro_cmd --timeout $timeout"
-        print_test "Timeout set to: $timeout seconds"
+        print_test "Timeout specified: $timeout seconds (handled at flow level)"
     fi
     
     # Add flow files
@@ -1869,25 +1905,95 @@ main() {
             print_success "Device and app ready for testing on $p"
         done
     else
-        # No platform specified - auto-detect non-interactively
-        print_step "No platform specified. Auto-detecting available device..."
+        # No platform specified - auto-detect and manage devices intelligently
+        print_step "No platform specified. Auto-detecting and managing devices..."
+        
+        # First, check for any running devices
         local android_candidate="$(adb devices 2>/dev/null | grep -v "List of devices" | grep -v "^$" | head -n 1 | cut -f1 | tr -d '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
         local ios_candidate=""
         if [[ "$OSTYPE" == "darwin"* ]] && command_exists xcrun; then
             ios_candidate="$(xcrun simctl list devices 2>/dev/null | grep "Booted" | head -n 1 | cut -d'(' -f2 | cut -d')' -f1 | tr -d '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
         fi
+        
+        # If we have running devices, use the first one found (prefer Android)
         if [[ -n "$android_candidate" ]]; then
             platform="android"
             device="$android_candidate"
-            print_success "Detected Android device: $device"
+            print_success "Detected running Android device: $device"
+            
+            # Close any iOS devices to avoid conflicts
+            if [[ -n "$ios_candidate" ]]; then
+                print_device "Closing iOS device to avoid conflicts..."
+                xcrun simctl shutdown "$ios_candidate" >/dev/null 2>&1 || true
+                sleep 3
+            fi
+            
         elif [[ -n "$ios_candidate" ]]; then
             platform="ios"
             device="$ios_candidate"
-            print_success "Detected iOS device: $device"
+            print_success "Detected running iOS device: $device"
+            
         else
-            print_error "No running devices detected. Start a device or pass -p <platform>."
-            print_status "Try: ./run-tests.sh --start-device android  or  ./run-tests.sh --start-device ios"
-            exit 1
+            # No devices running - start a new one (prefer Android)
+            print_device "No running devices detected. Starting new device..."
+            
+            # Close any existing devices first for clean start
+            close_all_devices
+            
+            # Try Android first
+            if command_exists adb; then
+                print_device "Attempting to start Android device..."
+                if maestro start-device --platform=android >/dev/null 2>&1; then
+                    sleep 10
+                    device="$(adb devices 2>/dev/null | grep -v "List of devices" | grep -v "^$" | head -n 1 | cut -f1 | tr -d '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+                    if [[ -n "$device" ]]; then
+                        platform="android"
+                        print_success "Successfully started Android device: $device"
+                    else
+                        print_warning "Android device started but not detected"
+                    fi
+                else
+                    print_warning "Failed to start Android device"
+                fi
+            fi
+            
+            # If Android failed and we're on macOS, try iOS
+            if [[ -z "$platform" ]] && [[ "$OSTYPE" == "darwin"* ]] && command_exists xcrun; then
+                print_device "Attempting to start iOS device..."
+                # Try to boot an existing iOS simulator
+                local available_simulator=$(xcrun simctl list devices 2>/dev/null | grep "iPhone" | grep "Shutdown" | head -n 1 | cut -d'(' -f2 | cut -d')' -f1 | tr -d '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+                
+                if [[ -n "$available_simulator" ]]; then
+                    print_device "Booting iOS simulator: $available_simulator"
+                    if xcrun simctl boot "$available_simulator" >/dev/null 2>&1; then
+                        sleep 10
+                        device="$(xcrun simctl list devices 2>/dev/null | grep "Booted" | head -n 1 | cut -d'(' -f2 | cut -d')' -f1 | tr -d '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+                        if [[ -n "$device" ]]; then
+                            platform="ios"
+                            print_success "Successfully started iOS device: $device"
+                        else
+                            print_warning "iOS device started but not detected"
+                        fi
+                    else
+                        print_warning "Failed to boot iOS simulator"
+                    fi
+                else
+                    print_warning "No available iOS simulators found"
+                fi
+            fi
+            
+            # If still no platform detected, exit with helpful message
+            if [[ -z "$platform" ]]; then
+                print_error "Failed to start any device automatically."
+                print_status "Please ensure you have:"
+                print_status "  - Android SDK with emulator support, OR"
+                print_status "  - Xcode with iOS simulators (macOS only)"
+                print_status ""
+                print_status "You can also manually start a device:"
+                print_status "  ./run-tests.sh --start-device android"
+                print_status "  ./run-tests.sh --start-device ios"
+                exit 1
+            fi
         fi
     fi
     

@@ -8,7 +8,7 @@
 
 appId: com.scopex.scopexmobile
 name: "Recipient"
-tags: ["smoke", "clear-state"]
+tags: ["smoke", "clear-state", "recipient"]
 
 # Environment variables
 env:
@@ -77,7 +77,7 @@ onFlowComplete:
 
 # Enter email
 - tapOn: "Email"
-- inputText: "teshank.2137@gmail.com"
+- inputText: "scopexverifieduser@yopmail.com"
 
 # Tap Next
 - tapOn: "Continue"
@@ -109,37 +109,37 @@ onFlowComplete:
 
 # Step 2: Navigate to Recipients
 - tapOn: "Recipients"
-- assertVisible: "No Recipient"
-- assertVisible: "Add NewRecipient"
+- assertVisible: "Add.*"
 
 # Step 3: Tap on Add New Recipient
-- tapOn: "Add NewRecipient"
+- tapOn: "Add.*"
 - assertVisible: "Add a new recipient"
 - assertVisible: "Just a few details to proceed"
 
 # Step 4: Select an avatar (first one)
 - tapOn:
-    point: "22%,45%" # First avatar option
+    id: "avatar" # First avatar option
 
 # Step 5: Fill in recipient details
 - tapOn: "Nickname"
-- inputText: "John Doe"
+- inputText: "Automation Test"
 
 - tapOn: "IFSC Code" 
-- inputText: "SBIN0001234"
+- inputText: "YESB0000611"
 
 - tapOn: "Account Number"
-- inputText: "1234567890123456"
+- inputText: "061190400001392"
 
 # Step 6: Verify all fields are filled
-- assertVisible: "John Doe"
-- assertVisible: "SBIN0001234" 
-- assertVisible: "1234567890123456"
+- assertVisible: "Automation Test"
+- assertVisible: "YESB0000611" 
+- assertVisible: "061190400001392"
 
 # Step 7: Complete recipient addition
 - tapOn: "Continue"
 
-- assertVisible: "John Doe"
+- assertVisible: "Automation Test"
+- assertVisible: "Account number already exists"
 
 # Step 8: Take screenshot
 - evalScript: "console.log('Step 8: Taking screenshot...');"

@@ -77,9 +77,10 @@ onFlowComplete:
 
 # Enter email
 - tapOn: "Email"
-- inputText: "teshank.2137@gmail.com"
+- inputText: "scopexverifieduser@yopmail.com"
 
 # Tap Next
+- tapOn: "Continue"
 - tapOn: "Continue"
 
 # Handle OTP flow

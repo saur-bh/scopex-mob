@@ -1,0 +1,450 @@
+# Maestro Framework Reference & Best Practices
+# Comprehensive guide for ScopeX Mobile Automation Framework
+
+## 📚 Maestro Documentation References
+
+### Core Documentation
+- **Main Docs**: https://docs.maestro.dev/
+- **Test Suites & Reports**: https://docs.maestro.dev/cli/test-suites-and-reports#supported-formats
+- **Test Output Directory**: https://docs.maestro.dev/cli/test-output-directory
+- **Tags**: https://docs.maestro.dev/cli/tags
+- **Commands Reference**: https://docs.maestro.dev/api-reference/commands
+- **Common Arguments**: https://docs.maestro.dev/api-reference/common-commands-arguments
+- **Selectors**: https://docs.maestro.dev/api-reference/selectors
+
+### Advanced Features
+- **Conditions**: https://docs.maestro.dev/advanced/conditions
+- **Parameters & Constants**: https://docs.maestro.dev/advanced/parameters-and-constants
+- **JavaScript Integration**: https://docs.maestro.dev/advanced/javascript/run-javascript
+- **JavaScript Outputs**: https://docs.maestro.dev/advanced/javascript/outputs
+- **JavaScript Logging**: https://docs.maestro.dev/advanced/javascript/logging
+- **Access Element Text**: https://docs.maestro.dev/advanced/javascript/access-element-text
+- **HTTP Requests**: https://docs.maestro.dev/advanced/javascript/make-http-requests
+- **Specify Device**: https://docs.maestro.dev/advanced/specify-a-device
+- **Flow Hooks**: https://docs.maestro.dev/advanced/onflowstart-onflowcomplete-hooks
+
+### Best Practices & How-tos
+- **Best Practices**: https://maestro.dev/blog/maestro-best-practices-structuring-your-test-suite
+- **Scroll Until Visible**: https://docs.maestro.dev/advanced/howtos/scrolluntilvisible-for-fragments
+- **Get Last Matching Element**: https://docs.maestro.dev/advanced/howtos/get-the-last-matching-element
+
+### Troubleshooting
+- **Known Issues**: https://docs.maestro.dev/troubleshooting/known-issues
+- **FAQ**: https://docs.maestro.dev/troubleshooting/frequently-asked-questions
+- **Repository Arrangement**: https://docs.maestro.dev/troubleshooting/frequently-asked-questions/arrange-your-repository-for-maestro-tests
+
+## 🚀 Framework Features
+
+### Device Management
+```bash
+# Start devices
+maestro start-device --platform=android
+maestro start-device --platform=ios
+
+# List devices
+maestro device list
+```
+
+### Test Execution Commands
+```bash
+# Basic test execution
+maestro test flows/feature/app-launch-clear-state.yaml
+
+# With format and output
+maestro test --format html --output reports/test-run flows/feature/
+
+# With tags
+maestro test --include-tags clear-state --exclude-tags slow flows/
+
+
+
+# Sequential execution
+maestro test --sequential flows/
+```
+
+### Report Formats
+- **HTML**: Interactive reports with screenshots and recordings
+- **JUnit**: XML format for CI/CD integration
+
+## 📁 Framework Structure
+
+```
+mobile-automation-scopex/
+├── maestro.yaml                    # Main configuration
+├── run-tests.sh                    # Advanced test runner
+├── setup.sh                        # Environment setup
+├── flows/                          # Test flows organized by category
+│   └── feature/                    # All test flows organized here
+│       ├── app-launch-clear-state.yaml
+│       ├── guest-user-journey-clear-state.yaml
+│       ├── signup-flow-clear-state.yaml
+│       ├── send-money-flow.yaml
+│       └── wallet-flow.yaml
+├── apps/                           # App binaries
+│   ├── android/
+│   │   └── app-release.apk
+│   └── ios/
+│       └── MyApp.app
+└── reports/                        # Test results
+    ├── screenshots/
+    ├── recordings/
+    ├── logs/
+    ├── step-logs/
+
+    └── performance/
+```
+
+## 🎯 Advanced Maestro Features
+
+### 1. Flow Hooks
+```yaml
+onFlowStart:
+  - evalScript: "console.log('Starting test...');"
+  - evalScript: "output.startTime = Date.now();"
+
+onFlowComplete:
+  - evalScript: "console.log('Test completed');"
+  - takeScreenshot: "test-complete"
+```
+
+### 2. JavaScript Integration
+```yaml
+# Basic logging
+- evalScript: "console.log('Step executed');"
+
+# Element text extraction
+- copyTextFrom: "Button"
+- evalScript: "console.log('Button text:', output.text);"
+
+# HTTP requests
+- evalScript: |
+    const response = fetch('https://api.example.com/data');
+    const data = response.json();
+    output.apiData = data;
+```
+
+### 3. Advanced Selectors
+```yaml
+# Multiple selector types
+- tapOn:
+    id: "button_id"
+    text: "Button Text"
+    index: 0
+
+# Scroll until visible
+- scrollUntilVisible:
+    element: "Target Element"
+    direction: DOWN
+    timeout: 5000
+```
+
+### 4. Conditional Execution
+```yaml
+# Platform-specific flows
+- runFlow:
+    when:
+      platform: android
+    file: "flows/android-specific.yaml"
+
+# Conditional commands
+- tapOn: "Continue"
+- assertVisible: "Next Screen"
+```
+
+### 5. Loops and Retry Logic
+```yaml
+# Repeat commands
+- repeat:
+    times: 3
+    commands:
+      - tapOn: "Retry"
+      - assertVisible: "Success"
+
+# Retry with conditions
+- retry:
+    times: 5
+    condition:
+      visible: "Loading"
+    commands:
+      - wait: 1000
+```
+
+## 🔧 Configuration Best Practices
+
+### maestro.yaml Configuration
+```yaml
+name: "ScopeX Mobile Tests"
+version: "2.0.0"
+
+# App configuration
+app:
+  android:
+    appId: "com.scopex.scopexmobile"
+    apkPath: "apps/android/app-release.apk"
+  ios:
+    appId: "com.scopex.scopexmobile"
+    appPath: "apps/ios/MyApp.app"
+
+# Test output directory
+testOutputDir: "reports"
+
+# Organized flows
+flows:
+  - "flows/feature/*.yaml"
+
+
+
+# Execution order
+executionOrder:
+  continueOnFailure: false
+  flowsOrder:
+    - "app-launch"
+    - "guest-user-journey"
+    - "user-authentication"
+
+# Environment variables
+env:
+  TEST_ENVIRONMENT: "staging"
+  PLATFORM: "${maestro.platform}"
+  TIMESTAMP: "${Date.now()}"
+
+# Device configuration
+device:
+  android:
+    preferred: ["Pixel_7_API_34", "Pixel_6_API_33"]
+  ios:
+    preferred: ["iPhone 15", "iPhone 14"]
+
+# Timeouts
+timeouts:
+  appLaunch: 15000
+  elementWait: 10000
+  permissionDialog: 5000
+```
+
+## 🏷️ Tag Strategy
+
+### Test Categories
+- **clear-state**: Quick tests for basic functionality with clean app state
+- **regression**: Comprehensive tests for existing features
+- **feature**: Tests for specific features
+- **integration**: End-to-end integration tests
+
+### Test Types
+- **critical**: Must-pass tests
+- **guest**: Guest user flows
+- **authentication**: User authentication flows
+- **navigation**: Navigation and UI flows
+
+### Usage Examples
+```bash
+# Run clear state tests only
+./run-tests.sh -t "clear-state"
+
+# Run regression excluding slow tests
+./run-tests.sh -t regression -e slow
+
+# Run critical tests on Android
+./run-tests.sh -p android -t critical
+```
+
+## 📊 Reporting & Analysis
+
+### HTML Reports
+- Interactive test results
+- Embedded screenshots
+- Video recordings
+- Step-by-step timeline
+- Performance metrics
+
+### AI Analysis
+- Automated issue detection
+- UI/UX recommendations
+- Internationalization checks
+- Performance insights
+
+### JUnit Reports
+- CI/CD integration
+- Test result aggregation
+- Failure analysis
+- Trend reporting
+
+## 🚀 Advanced Usage Examples
+
+### 1. Complex Navigation Test
+```yaml
+# Test all navigation tabs
+- evalScript: |
+    output.tabs = ['Home', 'Compare', 'Transfers', 'Wallet', 'Settings'];
+
+- repeat:
+    times: 5
+    commands:
+      - evalScript: |
+          const tab = output.tabs[output.currentIndex || 0];
+          console.log('Testing tab:', tab);
+      
+      - tapOn: "${tab}"
+      - assertVisible: "${tab}"
+      - takeScreenshot: "tab-${tab.toLowerCase()}"
+```
+
+### 2. API Integration Test
+```yaml
+# Make API call and verify response
+- evalScript: |
+    const response = fetch('https://api.scopex.com/user/profile', {
+      method: 'GET',
+      headers: { 'Authorization': 'Bearer ' + output.token }
+    });
+    const data = response.json();
+    output.userProfile = data;
+
+# Verify API data in UI
+- assertVisible: "${output.userProfile.name}"
+```
+
+### 3. Performance Testing
+```yaml
+# Measure app launch time
+- evalScript: "output.launchStart = Date.now();"
+- launchApp
+- evalScript: |
+    const launchTime = Date.now() - output.launchStart;
+    console.log('App launch time:', launchTime + 'ms');
+    output.launchTime = launchTime;
+```
+
+## 🔍 Troubleshooting Guide
+
+### Common Issues
+1. **Element not found**: Use `scrollUntilVisible` or `extendedWaitUntil`
+2. **Test flakiness**: Add proper waits and retry logic
+3. **Platform differences**: Use conditional execution
+4. **Device issues**: Check device connectivity and restart if needed
+
+### Debug Commands
+```bash
+# Verbose output
+./run-tests.sh -v --debug
+
+# Check device status
+./run-tests.sh --list-devices
+
+# Start fresh device
+./run-tests.sh --start-device android
+
+# Run with timeout
+./run-tests.sh --timeout 300
+```
+
+## 📈 Performance Optimization
+
+### Test Execution
+- Use parallel execution for independent tests
+- Implement proper retry logic
+- Optimize wait times
+- Use efficient selectors
+
+### Framework Optimization
+- Organize tests by category (feature, clear-state, post-signup)
+- Use tags for selective execution
+- Implement proper cleanup
+- Monitor resource usage
+
+## 🔄 CI/CD Integration
+
+### GitHub Actions Example
+```yaml
+name: Maestro Tests
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run Maestro Tests
+        run: |
+          ./run-tests.sh -p android -t "guest,clear-state" --format junit
+./run-tests.sh -p ios -t "guest,clear-state" --format junit
+```
+
+### JUnit Integration
+```bash
+# Generate JUnit reports
+./run-tests.sh --format junit -t regression
+
+# Upload to CI/CD
+# Reports will be in reports/test-run-*/report.xml
+```
+
+## 🎯 Best Practices Summary
+
+1. **Organize tests by category** (feature, clear-state, post-signup)
+2. **Use descriptive tags** for test selection
+3. **Implement proper error handling** with retry logic
+4. **Add comprehensive logging** for debugging
+5. **Use conditional execution** for platform-specific tests
+6. **Implement flow hooks** for setup and cleanup
+7. **Use advanced selectors** for reliable element interaction
+8. **Generate multiple report formats** for different stakeholders
+9. **Monitor performance** and optimize test execution
+
+
+## 🤖 Maestro MCP Integration
+
+### What is MCP?
+Model Context Protocol (MCP) is a standardized protocol that bridges AI models with various data sources and tools. It's like "USB-C for AI" — a universal connector that enables seamless communication between large language models (LLMs) and the resources they need.
+
+### Benefits of Maestro MCP
+- **Direct AI Integration**: Use Maestro directly within AI tools like Cursor, Claude, or Windsurf
+- **Real-time Test Execution**: Run and manage Maestro tests through AI assistants
+- **Enhanced Development**: Get AI assistance for writing, debugging, and optimizing Maestro flows
+- **Seamless Workflow**: No need to switch between tools - everything in one place
+
+### Cursor MCP Configuration
+To enable Maestro MCP in Cursor, add the following configuration to your Cursor settings:
+
+```json
+{
+  "mcpServers": {
+    "maestro": {
+      "command": "maestro",
+      "args": [
+        "mcp"
+      ]
+    }
+  }
+}
+```
+
+### Installation Steps
+1. **Verify Maestro Installation**: Ensure Maestro CLI is installed and accessible
+2. **Configure Cursor**: Add the MCP configuration to Cursor settings
+3. **Restart Cursor**: Restart Cursor to load the MCP configuration
+4. **Test Integration**: Ask Cursor to run Maestro commands or help with test flows
+
+### MCP Usage Examples
+With MCP enabled, you can ask Cursor to:
+- Run Maestro tests directly
+- Help write and debug Maestro flows
+- Analyze test results and provide insights
+- Generate test cases based on your app structure
+- Optimize existing test flows
+
+### MCP Documentation
+- **Maestro MCP Docs**: https://docs.maestro.dev/getting-started/maestro-mcp
+- **MCP Protocol**: Standardized AI integration protocol
+- **Cursor Integration**: Direct Maestro support in Cursor IDE
+
+## 📞 Support & Resources
+
+- **Maestro Community**: https://github.com/mobile-dev-inc/maestro
+- **Documentation**: https://docs.maestro.dev/
+- **Blog**: https://maestro.dev/blog/
+- **Slack**: Join the Maestro community for support
+- **MCP Integration**: https://docs.maestro.dev/getting-started/maestro-mcp
+
+---
+
+*This reference guide contains all essential Maestro knowledge for the ScopeX Mobile Automation Framework. Update as needed when new features are added.*

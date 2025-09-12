@@ -9,7 +9,7 @@ tags: ["feature", "signup", "onboarding", "authentication", "clear-state", "smok
 env:
   TEST_START_TIME: "${Date.now()}"
   PLATFORM: "${maestro.platform}"
-  USER_EMAIL: "${USER_EMAIL:-teshank.2137@gmail.com}"
+  USER_EMAIL: "${USER_EMAIL:-scopexverifieduser@yopmail.com}"
   USER_OTP: "${USER_OTP:-000000}"
 
 # Flow hooks for setup and cleanup

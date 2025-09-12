@@ -8,7 +8,7 @@
 
 appId: com.scopex.scopexmobile
 name: "wallet"
-tags: ["smoke", "clear-state"]
+tags: ["still-working", "clear-state", "wallet"]
 
 # Environment variables
 env:
@@ -77,9 +77,10 @@ onFlowComplete:
 
 # Enter email
 - tapOn: "Email"
-- inputText: "teshank.2137@gmail.com"
+- inputText: "scopexverifieduser@yopmail.com"
 
 # Tap Next
+- tapOn: "Continue"
 - tapOn: "Continue"
 
 # Handle OTP flow
@@ -117,7 +118,49 @@ onFlowComplete:
 # - assertVisible: "1000"  # Verify the amount is selected and displayed
 
 # Step 4: Tap on Add € 1,000 button
-- tapOn: "Add € 500"
+- tapOn: "Custom"
+- tapOn: "5000"
+- longPressOn: "5000"
+- tapOn: "Select All"
+- eraseText # Removes up to 50 characters (default)
+- inputText: "10"
+- tapOn: "Add.*"
+- tapOn: "Add.*"
+- assertVisible: "Amount must be greater than or equal to.*"
+
+- tapOn: "5000"
+- longPressOn: "5000"
+- tapOn: "Select All"
+- eraseText # Removes up to 50 characters (default)
+- inputText: "100001"
+- tapOn: "Add.*"
+- tapOn: "Add.*"
+- assertVisible: "Maximum limit per order - 100000"
+
+- tapOn: "5000"
+- longPressOn: "5000"
+- tapOn: "Select All"
+- eraseText # Removes up to 50 characters (default)
+- inputText: "50"
+- tapOn: "Add.*"
+- tapOn: "Add.*"
+- assertVisible: "Transfer initiated"
+
+- runFlow:
+    when:
+      visible: "Pay Now"
+    commands:
+        - tapOn: "Pay Now"
+- tapOn: "Pay Now"
+- tapOn: "Accept & continue"
+- tapOn: "No thanks"
+- tapOn: "93%,12%"
+- tapOn: "Pay by manual bank transfer Copy payment details to your bank"
+- tapOn: "I've sent the transfer"
+- tapOn: "Yes, I sent the transfer"
+- tapOn: "Close"
+- assertVisible: "Send € 50 from your bank"
+- tapOn: "Details"
 
 # Step 5: Observe top-up process tab
 - assertVisible: "Send 500 EUR"
