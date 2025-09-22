@@ -4,18 +4,33 @@
 name: "ScopeX Mobile Tests"
 version: "2.0.0"
 
-# App configuration
+# App configuration with installation settings
 app:
   android:
     appId: "com.scopex.scopexmobile"
     apkPath: "apps/android/app-release.apk"
+    # Force fresh installation for each test run
+    install: true
+    uninstallFirst: true
   ios:
     appId: "com.scopex.scopexmobile"
     appPath: "apps/ios/MyApp.app"
+    # Force fresh installation for each test run
+    install: true
+    uninstallFirst: true
 
 # Test flows with proper organization
 flows:
   - "flows/feature/*.yaml"         # All feature tests organized here
+
+# Pre-test setup to ensure app installation
+preTestSetup:
+  - name: "Ensure App Installation"
+    description: "Verify and install app before running tests"
+    commands:
+      - evalScript: "console.log('Pre-test: Checking app installation...');"
+      - evalScript: "console.log('App ID: com.scopex.scopexmobile');"
+      - evalScript: "console.log('Platform: ' + maestro.platform);"
 
 # Execution order for sequential tests
 executionOrder:
@@ -64,6 +79,20 @@ capabilities:
     autoGrantPermissions: true
     noReset: false
     unicodeKeyboard: true
+    # Ensure fresh app state for each test
+    fullReset: true
   ios:
     autoAcceptAlerts: false
     autoDismissAlerts: false
+    # Ensure fresh app state for each test
+    fullReset: true
+
+# App Installation Requirements
+# IMPORTANT: The run-tests.sh script will automatically:
+# 1. Check if app is installed on the device
+# 2. Uninstall existing app if found
+# 3. Install fresh app from apps/android/app-release.apk or apps/ios/MyApp.app
+# 4. Verify installation before running tests
+# 
+# All flows use launchApp with clearState: true, which requires the app to be installed
+# The script ensures this requirement is met before any test execution

@@ -1733,53 +1733,13 @@ main() {
         
         print_device "Using device: '$device'"
         
-        # Install app
-        if [[ "$platform" == "android" ]]; then
-            local apk_path="apps/android/app-release.apk"
-            if [[ -f "$apk_path" ]]; then
-                print_device "Installing Android app on device: $device"
-                
-                # Uninstall if exists
-                if adb -s "$device" shell pm list packages | grep -q "com.scopex.scopexmobile" 2>/dev/null; then
-                    print_device "Uninstalling existing app..."
-                    adb -s "$device" uninstall com.scopex.scopexmobile >/dev/null 2>&1
-                    sleep 2
-                fi
-                
-                # Install fresh
-                if adb -s "$device" install "$apk_path" >/dev/null 2>&1; then
-                    print_success "Android app installed successfully"
-                else
-                    print_error "Failed to install Android app"
-                    exit 1
-                fi
-            else
-                print_error "Android APK not found at: $apk_path"
-                exit 1
-            fi
-        elif [[ "$platform" == "ios" ]]; then
-            local app_path="apps/ios/MyApp.app"
-            if [[ -d "$app_path" ]]; then
-                print_device "Installing iOS app on device: $device"
-                
-                # Uninstall if exists
-                if xcrun simctl listapps "$device" | grep -q "com.scopex.scopexmobile" 2>/dev/null; then
-                    print_device "Uninstalling existing app..."
-                    xcrun simctl uninstall "$device" com.scopex.scopexmobile >/dev/null 2>&1
-                    sleep 2
-                fi
-                
-                # Install fresh
-                if xcrun simctl install "$device" "$app_path" >/dev/null 2>&1; then
-                    print_success "iOS app installed successfully"
-                else
-                    print_error "Failed to install iOS app"
-                    exit 1
-                fi
-            else
-                print_error "iOS app not found at: $app_path"
-                exit 1
-            fi
+        # ALWAYS install app - ensure fresh installation
+        print_device "Ensuring fresh app installation on $platform device: $device"
+        if ensure_app_installed "$platform" "$device"; then
+            print_success "Fresh app installation completed successfully"
+        else
+            print_error "Failed to install app - cannot proceed with tests"
+            exit 1
         fi
         
         print_success "Device and app ready for testing on $platform"
@@ -1830,27 +1790,12 @@ main() {
                     continue
                 fi
                 
-                # Install app
-                local apk_path="apps/android/app-release.apk"
-                if [[ -f "$apk_path" ]]; then
-                    print_device "Installing Android app on device: $device_id"
-                    
-                    # Uninstall if exists
-                    if adb -s "$device_id" shell pm list packages | grep -q "com.scopex.scopexmobile" 2>/dev/null; then
-                        print_device "Uninstalling existing app..."
-                        adb -s "$device_id" uninstall com.scopex.scopexmobile >/dev/null 2>&1
-                        sleep 2
-                    fi
-                    
-                    # Install fresh
-                    if adb -s "$device_id" install "$apk_path" >/dev/null 2>&1; then
-                        print_success "Android app installed successfully"
-                    else
-                        print_error "Failed to install Android app"
-                        continue
-                    fi
+                # Install app using ensure_app_installed function
+                print_device "Ensuring fresh app installation on Android device: $device_id"
+                if ensure_app_installed "android" "$device_id"; then
+                    print_success "Android app installed successfully"
                 else
-                    print_error "Android APK not found at: $apk_path"
+                    print_error "Failed to install Android app"
                     continue
                 fi
                 
@@ -1877,27 +1822,12 @@ main() {
                     fi
                 fi
                 
-                # Install app
-                local app_path="apps/ios/MyApp.app"
-                if [[ -d "$app_path" ]]; then
-                    print_device "Installing iOS app on device: $device_id"
-                    
-                    # Uninstall if exists
-                    if xcrun simctl listapps "$device_id" | grep -q "com.scopex.scopexmobile" 2>/dev/null; then
-                        print_device "Uninstalling existing app..."
-                        xcrun simctl uninstall "$device_id" com.scopex.scopexmobile >/dev/null 2>&1
-                        sleep 2
-                    fi
-                    
-                    # Install fresh
-                    if xcrun simctl install "$device_id" "$app_path" >/dev/null 2>&1; then
-                        print_success "iOS app installed successfully"
-                    else
-                        print_error "Failed to install iOS app"
-                        continue
-                    fi
+                # Install app using ensure_app_installed function
+                print_device "Ensuring fresh app installation on iOS device: $device_id"
+                if ensure_app_installed "ios" "$device_id"; then
+                    print_success "iOS app installed successfully"
                 else
-                    print_error "iOS app not found at: $app_path"
+                    print_error "Failed to install iOS app"
                     continue
                 fi
             fi
@@ -1928,10 +1858,28 @@ main() {
                 sleep 3
             fi
             
+            # Ensure app is installed on detected device
+            print_device "Ensuring fresh app installation on detected Android device: $device"
+            if ensure_app_installed "android" "$device"; then
+                print_success "Fresh app installation completed successfully"
+            else
+                print_error "Failed to install app - cannot proceed with tests"
+                exit 1
+            fi
+            
         elif [[ -n "$ios_candidate" ]]; then
             platform="ios"
             device="$ios_candidate"
             print_success "Detected running iOS device: $device"
+            
+            # Ensure app is installed on detected device
+            print_device "Ensuring fresh app installation on detected iOS device: $device"
+            if ensure_app_installed "ios" "$device"; then
+                print_success "Fresh app installation completed successfully"
+            else
+                print_error "Failed to install app - cannot proceed with tests"
+                exit 1
+            fi
             
         else
             # No devices running - start a new one (prefer Android)
@@ -1949,6 +1897,15 @@ main() {
                     if [[ -n "$device" ]]; then
                         platform="android"
                         print_success "Successfully started Android device: $device"
+                        
+                        # Ensure app is installed on newly started device
+                        print_device "Ensuring fresh app installation on newly started Android device: $device"
+                        if ensure_app_installed "android" "$device"; then
+                            print_success "Fresh app installation completed successfully"
+                        else
+                            print_error "Failed to install app - cannot proceed with tests"
+                            exit 1
+                        fi
                     else
                         print_warning "Android device started but not detected"
                     fi
@@ -1971,6 +1928,15 @@ main() {
                         if [[ -n "$device" ]]; then
                             platform="ios"
                             print_success "Successfully started iOS device: $device"
+                            
+                            # Ensure app is installed on newly started device
+                            print_device "Ensuring fresh app installation on newly started iOS device: $device"
+                            if ensure_app_installed "ios" "$device"; then
+                                print_success "Fresh app installation completed successfully"
+                            else
+                                print_error "Failed to install app - cannot proceed with tests"
+                                exit 1
+                            fi
                         else
                             print_warning "iOS device started but not detected"
                         fi
