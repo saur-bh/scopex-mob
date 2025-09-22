@@ -107,13 +107,61 @@ onFlowComplete:
     visible: "Send Money"
     timeout: 15000
 
-# step: Rate 
-# ... existing code ...
 
-# Step 5: Verify successful signup
+
+# Compare tab navigation
+- tapOn:
+    text: "Compare.*"
+    index: 0
+    enabled: true
+
+# Settings tab navigation
+- tapOn:
+    text: "Settings"
+    index: 0
+    enabled: true
+
+# Wait for Settings screen to load
 - extendedWaitUntil:
-    visible: "Send Money"
-    timeout: 15000
+    visible: "Settings"
+    timeout: 10000
+
+# Verify Settings screen elements exist (Traditional assertions)
+- assertVisible: "Notifications"
+- assertVisible: "App lock"
+- assertVisible: "Devices"
+- assertVisible: "Wallet recovery"
+- assertVisible: "Delete account"
+
+# AI-powered assertion for comprehensive Settings screen verification
+- assertWithAI:
+    assertion: "The Settings screen contains exactly one instance of each of the following elements: 'Notifications', 'App lock', 'Devices', 'Wallet recovery', and 'Delete account'. All five elements should be visible and there should be no duplicates of any of these elements."
+
+# Take screenshot for verification
+- takeScreenshot: "settings-screen-verified"
+
+# Step 7: Verify main navigation elements with scroll support
+# Use scrollUntilVisible for elements that might be off-screen
+
+# Test Transfers section
+- tapOn:
+    text: "Transfers"
+    index: 0
+    enabled: true
+# Test Wallet section
+- assertVisible: "Wallet"
+- tapOn:
+    text: "Wallet"
+    index: 0
+    enabled: true
+# Home tab navigation - use more specific selector
+- tapOn:
+    text: "Home"
+    index: 0
+    enabled: true
+
+# Verify we're on home screen
+- assertVisible: "25 paise better than"
 
 # Step 6: Load and use the getRate script
 - runScript: ../../scripts/getRate.js

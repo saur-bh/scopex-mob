@@ -1587,6 +1587,11 @@ main() {
     # Show header
     print_header
     
+    # Export Maestro Cloud API Key for AI features
+    print_step "Setting up Maestro Cloud API Key for AI features..."
+    export MAESTRO_CLOUD_API_KEY=rb_qikYa7g2y5LcDEwLaEDz258ykjRQW7tIaR9K8jLlz6ijqCLTNfnDla3Nd17JF2ealh8kcsYHYyg35M41obGaz85VJz4uqI1orj
+    print_success "Maestro Cloud API Key configured for assertWithAI and other AI features"
+    
     # Handle device management commands
     if [[ -n "$start_device_platform" ]]; then
         start_device "$start_device_platform"
