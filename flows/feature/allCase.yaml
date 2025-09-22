@@ -1,5 +1,5 @@
-# PromoCode - This is to test promocode feature
-# This is to test promocode feature
+# Recipient - this is to test user can add recipient using setting
+# this is to test user can add recipient using setting
 
 # IMPORTANT: Use Maestro Studio to record your test steps!
 # 1. Run: maestro studio
@@ -7,8 +7,8 @@
 # 3. Copy the generated commands to replace the placeholder steps below
 
 appId: com.scopex.scopexmobile
-name: "PromoCode"
-tags: ["smoke", "promocode", "clear-state"]
+name: "Recipient"
+tags: ["sanity", "clear-state", "recipient"]
 
 # Environment variables
 env:
@@ -24,13 +24,13 @@ onFlowStart:
 onFlowComplete:
   - evalScript: "const duration = Date.now() - output.testStartTime;"
   - evalScript: "output.stepCount++;"
-  - takeScreenshot: "PromoCode-complete"
+  - takeScreenshot: "allCase-complete"
 
 ---
 # Start screen recording
 - startRecording:
-    path: 'PromoCode'
-    label: 'PromoCode Recording'
+    path: 'allCase'
+    label: 'Recipient Recording'
 
 # Step 1: Launch the app with state clearing
 - launchApp:
@@ -79,6 +79,7 @@ onFlowComplete:
 - tapOn: "Email"
 - inputText: "scopexverifieduser@yopmail.com"
 
+# Tap Next
 - repeat:
     while:
       visible: "Continue"
@@ -106,39 +107,85 @@ onFlowComplete:
     visible: "Send Money"
     timeout: 15000
 
-# Navigate to Send Money
-- tapOn: "Send Money"
-- assertVisible: "Send Money"
+# step: Rate 
+# ... existing code ...
 
-# Apply invalid promo code
-- tapOn: "Add"
-- assertVisible: "Add Promo Code"
-- tapOn: "Promo Code"
-- inputText: "INVALID123"
-- tapOn: "Unlock.*"
+# Step 5: Verify successful signup
+- extendedWaitUntil:
+    visible: "Send Money"
+    timeout: 15000
 
-# Verify error handling
-- assertVisible: "Invalid promo code"
+# Step 6: Load and use the getRate script
+- runScript: ../../scripts/getRate.js
 
-# Verify user can retry
-- tapOn: "Promo Code"
-- eraseText 
-- inputText: "EXPIRED"
-- tapOn: "Unlock.*"
-- assertVisible: "Invalid.*"
-#- tapOn: "close.*"
+# Step 7: Verify the rate was fetched and log it
+- evalScript: "console.log('Current exchange rate:', output.currentRate);"
+- evalScript: "if (!output.currentRate) { console.error('Failed to fetch rate from API'); }"
+
+# Verify rate is visible on screen using the dynamic rate from API
+- assertVisible: "1 EUR = ${output.currentRate} INR"
+
+# ... existing code continues ...
+
+
+#Step 1: Open hamburger menu
+# Step 1: Open hamburger menu
+- tapOn:
+    id: header-button
+    index: 0
+- assertVisible: "Recipients"
+
+# Step 2: Navigate to Recipients
+- tapOn: "Recipients"
+- assertVisible: "Add.*"
+
+# Step 3: Tap on Add New Recipient
+- tapOn: "Add.*"
+- assertVisible: "Add a new recipient"
+- assertVisible: "Just a few details to proceed"
+
+# Step 4: Select an avatar (first one)
+- tapOn:
+    id: "avatar" # First avatar option
+
+# Step 5: Fill in recipient details
+- tapOn: "Nickname"
+- inputText: "Automation Test"
+
+- tapOn: "IFSC Code" 
+- inputText: "YESB0000611"
+
+- tapOn: "Account Number"
+- inputText: "061190400001392"
+
+# Step 6: Verify all fields are filled
+- assertVisible: "Automation Test"
+- assertVisible: "YESB0000611" 
+- assertVisible: "061190400001392"
+
+# Step 7: Complete recipient addition
+- tapOn: "Continue"
+
+- assertVisible: "Account number already exists"
+- tapOn: "✕"
+- tapOn: ""
+- tapOn: "Settings"
+- assertVisible: "Settings"
+- tapOn: "Settings"
 
 # Step 8: Take screenshot
 - evalScript: "console.log('Step 8: Taking screenshot...');"
-- takeScreenshot: "PromoCode-complete"
+- takeScreenshot: "Recipient-complete"
 
 # Step 9: Final verification
 - evalScript: "console.log('Step 9: Final verification...');"
 - assertTrue: "maestro.appId === 'com.scopex.scopexmobile'"
-- evalScript: "console.log('PromoCode test completed successfully!');"
+- evalScript: "console.log('Recipient test completed successfully!');"
+
+
 
 # Stop recording
-- evalScript: "console.log('Recording completed - PromoCode test finished');"
+- evalScript: "console.log('Recording completed - Recipient test finished');"
 - stopRecording
 
 # ============================================================================
@@ -157,5 +204,5 @@ onFlowComplete:
 #    - Replace with your recorded commands
 #
 # 4. Test your flow:
-#    ./run-tests.sh flows/feature/PromoCode.yaml
+#    ./run-tests.sh flows/feature/Recipient.yaml
 # ============================================================================

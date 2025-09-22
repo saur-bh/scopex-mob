@@ -16,6 +16,10 @@ First, run the setup script to verify everything is configured correctly:
 ```bash
 ./run-tests.sh -t "smoke"
 ```
+#### Sanity Tests (Quick validation)
+```bash
+./run-tests.sh -t "sanity"
+```
 
 #### Regression Tests (Full test suite)
 ```bash

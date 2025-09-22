@@ -3,7 +3,7 @@
 
 appId: com.scopex.scopexmobile
 name: "Signup Flow with Clear State"
-tags: ["feature", "signup", "onboarding", "authentication", "clear-state", "smoke"]
+tags: ["feature", "signup", "onboarding", "authentication", "clear-state"]
 
 # Environment variables
 env:
@@ -92,8 +92,12 @@ onFlowComplete:
 - inputText: "${USER_OTP}"
 
 # Complete OTP verification
-- tapOn: "Verify"
-- tapOn: "Verify"
+- repeat:
+    while:
+      visible: "Verify"
+    commands:
+      - tapOn: "Verify"
+
 
 
 # Step 5: Verify successful signup

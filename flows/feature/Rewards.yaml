@@ -79,9 +79,11 @@ onFlowComplete:
 - tapOn: "Email"
 - inputText: "scopexverifieduser@yopmail.com"
 
-# Tap Next
-- tapOn: "Continue"
-- tapOn: "Continue"
+- repeat:
+    while:
+      visible: "Continue"
+    commands:
+      - tapOn: "Continue"
 
 # Handle OTP flow
 - tapOn: "Login with code"
@@ -92,8 +94,12 @@ onFlowComplete:
 - inputText: "000000"
 
 # Complete OTP verification
-- tapOn: "Verify"
-- tapOn: "Verify"
+- repeat:
+    while:
+      visible: "Verify"
+    commands:
+      - tapOn: "Verify"
+
 
 
 # Step 5: Verify successful signup

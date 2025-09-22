@@ -1,0 +1,48 @@
+# Maestro Configuration for ScopeX Mobile App
+# Following Maestro best practices and official standards
+
+# Test flows configuration
+flows:
+  - "flows/feature/"  # Include all test flows in the feature directory
+
+# Environment variables available to all flows
+env:
+  TEST_ENVIRONMENT: "staging"
+  PLATFORM: "${maestro.platform}"
+  TIMESTAMP: "${Date.now()}"
+  DEVICE_ID: "${maestro.deviceId}"
+  APP_ID: "com.scopex.scopexmobile"
+
+# Test execution settings
+includeTags:
+  - "feature"
+  - "smoke"
+  - "clear-state"
+  - "guest"
+  - "onboarding"
+  - "signup"
+  - "wallet"
+  - "recipient"
+  - "promocode"
+  - "rewards"
+
+# Exclude experimental or broken tests
+excludeTags:
+  - "experimental"
+  - "broken"
+  - "notags"
+
+# Test output configuration
+output:
+  format: "html"
+  verbose: true
+  debug: true
+
+# App configuration (for reference - actual app management handled by run-tests.sh)
+app:
+  android:
+    appId: "com.scopex.scopexmobile"
+    apkPath: "apps/android/app-release.apk"
+  ios:
+    appId: "com.scopex.scopexmobile"
+    appPath: "apps/ios/MyApp.app"
