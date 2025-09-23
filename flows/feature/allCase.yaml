@@ -91,8 +91,23 @@ onFlowComplete:
 
 # Enter OTP
 - tapOn:
-    point: "11%,41%"
-- inputText: "000000"
+    id: "otp-input-0"
+- inputText: "0"
+- tapOn:
+    id: "otp-input-1"
+- inputText: "0"
+- tapOn:
+    id: "otp-input-2"
+- inputText: "0"
+- tapOn:
+    id: "otp-input-3"
+- inputText: "0"
+- tapOn:
+    id: "otp-input-4"
+- inputText: "0"
+- tapOn:
+    id: "otp-input-5"
+- inputText: "0"
 
 # Complete OTP verification
 - repeat:
